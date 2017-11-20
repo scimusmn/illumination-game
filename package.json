@@ -4,9 +4,9 @@
   "description": "multiplayer game for illumination",
   "dependencies": {
     "express": "^4.9.8",
-    "profanity-util": "0.0.2",
+    "profanity-util": "^0.2.0",
     "puid": "^1.0.5",
-    "socket.io": "^1.1.0",
+    "socket.io": "^2.0.4",
     "ua-parser": "^0.3.3"
   }
 }

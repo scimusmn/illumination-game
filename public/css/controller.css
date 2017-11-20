@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css?family=Ubuntu+Mono');
+
 *{
     margin: 0;
     padding: 0;
@@ -6,7 +8,8 @@
 
 body {
 
-    font: 14px Sans, Arial;
+    font: 17px Sans, Helvetica;
+    font-family: 'Ubuntu Mono', monospace;
     color: #eee;
     text-align: center;
 
