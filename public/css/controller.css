@@ -6,9 +6,8 @@
 
 body {
 
-    font: 13px Georgia, Arial;
-    font-style: italic;
-    color: #dfdadd;
+    font: 14px Sans, Arial;
+    color: #eee;
     text-align: center;
 
     /* Disable text highlighting */
@@ -24,7 +23,7 @@ body {
     width: 100%;
     overflow: hidden;
     position: fixed;
-    background-color: #3a3a3a;
+    background-color: #2a2a2a;
 
 }
 

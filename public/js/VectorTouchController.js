@@ -222,6 +222,7 @@ function VectorTouchController(socket) {
     $('body').touchglow({
 
             touchColor: "#fff",
+            touchBlurRadius: 0,
             fadeInDuration: 25,
             fadeOutDuration: 250,
 

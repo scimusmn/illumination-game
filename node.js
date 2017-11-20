@@ -3,7 +3,6 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http, {path: '/socket.io'});
-// var io = require('socket.io')(http);
 var path = require('path');
 var uaParser = require('ua-parser');
 var Puid = require('puid');

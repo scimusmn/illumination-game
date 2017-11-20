@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Touch Controller</title>
+    <title>Controller</title>
     <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
   </head>
 
@@ -11,8 +11,8 @@
   <!-- JS -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-  <script src="/js/VectorTouchController.js"></script>
   <script src="/js/vendor/jquery.touchglow.js"></script>
+  <script src="/js/VectorTouchController.js"></script>
   <script src="/js/vendor/howler.min.js"></script>
   <script src="/js/vendor/randomColor.min.js"></script>
 
@@ -20,7 +20,6 @@
 
     $(document).ready(function(){
 
-      console.log('attempting io connect');
       var socket = io.connect('', {path: "/socket.io"});
 
      /**
@@ -71,7 +70,7 @@
 
       function promptFirstTimer() {
 
-        var nickname = prompt("Welcome! Touch and drag to move your character. Tap screen to smash asteroids. Enter nickname.", '');
+        var nickname = prompt("Enter nickname to join. Touch and drag to move. Tap to perform action.", '');
         nickame = sanitize(nickname);
         var data = {'nickname': nickname};
         data.firstTime = true;
@@ -200,7 +199,6 @@
       }
       function playSound(sndId) {
         if (soundPlayer) {
-          console.log("play", sndId);
           soundPlayer.play(sndId);
         }
       }
