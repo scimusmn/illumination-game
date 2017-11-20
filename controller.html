@@ -14,6 +14,7 @@
   <script src="/js/vendor/jquery.touchglow.js"></script>
   <script src="/js/VectorTouchController.js"></script>
   <script src="/js/vendor/howler.min.js"></script>
+  <script src="/js/vendor/howler.core.min.js"></script>
   <script src="/js/vendor/randomColor.min.js"></script>
 
   <script>
@@ -60,7 +61,7 @@
 
       function promptReturnUser(data) {
 
-        var nickname = prompt("Welcome back!\nEnter nickname.", ''); // (User:"+data.userid+")\nEnter nickname.
+        var nickname = prompt("Welcome back!\nEnter your nickname.", ''); // (User:"+data.userid+")\nEnter nickname.
 
         data.nickname = sanitize(nickname);
         data.firstTime = false;
@@ -70,7 +71,7 @@
 
       function promptFirstTimer() {
 
-        var nickname = prompt("Enter nickname to join. Touch and drag to move. Tap to perform action.", '');
+        var nickname = prompt('Enter your nickname to join. Touch and drag to move. Tap screen to perform action. Unmute your phone.', '');
         nickame = sanitize(nickname);
         var data = {'nickname': nickname};
         data.firstTime = true;
@@ -179,7 +180,8 @@
       function initSounds () {
 
         soundPlayer = new Howl({
-          urls: ['sounds/sounds.mp3', 'sounds/sounds.ogg'],
+          // TODO - include webm format
+          src: ['sounds/sounds.mp3', 'sounds/sounds.ogg'],
           buffer: true,
           sprite: {
 
