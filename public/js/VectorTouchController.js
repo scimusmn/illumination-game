@@ -227,13 +227,16 @@ function VectorTouchController(socket) {
             fadeOutDuration: 250,
 
         onUpdatePosition: function(x,y){
+            return true;
 
         },
         onFadeIn: function(fadeDur){
             $('#instruct').stop().fadeTo(fadeDur, 0.2);
+            return true;
         },
         onFadeOut: function(fadeDur){
             $('#instruct').stop().fadeTo(fadeDur, 1);
+            return true;
         }
 
     });
