@@ -1,250 +1,255 @@
 function VectorTouchController(socket) {
 
-    var angle;
-    var dist;
-    var magnitude;
-    var screenWidth = parseInt($("body").width());
-    var screenHeight = parseInt($("body").height());
-    var centerX = parseInt(screenWidth/2);
-    var centerY = parseInt(screenHeight/2);
-    var shortest = Math.min(centerX, centerY);
-    var mouseIsDown = false;
+  var angle;
+  var dist;
+  var magnitude;
+  var screenWidth = parseInt($('body').width());
+  var screenHeight = parseInt($('body').height());
+  var centerX = parseInt(screenWidth / 2);
+  var centerY = parseInt(screenHeight / 2);
+  var shortest = Math.min(centerX, centerY);
+  var mouseIsDown = false;
 
-    //Setup canvas drawing
-    var ctx = document.getElementById('canvas').getContext('2d');
-    $("#canvas").attr('width', screenWidth);
-    $("#canvas").attr('height', screenHeight);
+  // Setup canvas drawing
+  var ctx = document.getElementById('canvas').getContext('2d');
+  $('#canvas').attr('width', screenWidth);
+  $('#canvas').attr('height', screenHeight);
 
-    this.enable = function(){
+  this.enable = function() {
 
-        document.addEventListener( 'mousedown', mousedown, false );
-        document.addEventListener( 'mousemove', mousemove, false );
-        document.addEventListener( 'mouseup', mouseup, false );
+    document.addEventListener('mousedown', mousedown, false);
+    document.addEventListener('mousemove', mousemove, false);
+    document.addEventListener('mouseup', mouseup, false);
 
-        document.addEventListener( 'touchstart', touchEvent, false );
-        document.addEventListener( 'touchend', touchEvent, false );
-        document.addEventListener( 'touchcancel', touchEvent, false );
-        document.addEventListener( 'touchmove', touchEvent, false );
+    document.addEventListener('touchstart', touchEvent, false);
+    document.addEventListener('touchend', touchEvent, false);
+    document.addEventListener('touchcancel', touchEvent, false);
+    document.addEventListener('touchmove', touchEvent, false);
 
-    };
+  };
 
-    this.disable = function(){
+  this.disable = function() {
 
-        document.removeEventListener( 'mousedown', mousedown, false );
-        document.removeEventListener( 'mousemove', mousemove, false );
-        document.removeEventListener( 'mouseup', mouseup, false );
+    document.removeEventListener('mousedown', mousedown, false);
+    document.removeEventListener('mousemove', mousemove, false);
+    document.removeEventListener('mouseup', mouseup, false);
 
-        document.removeEventListener( 'touchstart', touchEvent, false );
-        document.removeEventListener( 'touchend', touchEvent, false );
-        document.removeEventListener( 'touchcancel', touchEvent, false );
-        document.removeEventListener( 'touchmove', touchEvent, false );
+    document.removeEventListener('touchstart', touchEvent, false);
+    document.removeEventListener('touchend', touchEvent, false);
+    document.removeEventListener('touchcancel', touchEvent, false);
+    document.removeEventListener('touchmove', touchEvent, false);
 
-    };
+  };
 
-    function mousedown (event) {
+  function mousedown(event) {
 
-        mouseIsDown = true;
-        inputStart(event.pageX, event.pageY);
+    mouseIsDown = true;
+    inputStart(event.pageX, event.pageY);
+
+  }
+
+  function mousemove(event) {
+
+    if (mouseIsDown === true) {
+      inputMove(event.pageX, event.pageY);
+    }
+
+  }
+
+  function mouseup(event) {
+
+    mouseIsDown = false;
+    inputUp();
+
+  }
+
+  function touchEvent(event) {
+
+    if (event.type == 'touchmove') {
+
+      inputMove(event.touches[0].pageX, event.touches[0].pageY);
+
+    } else if (event.type == 'touchstart') {
+
+      inputStart(event.touches[0].pageX, event.touches[0].pageY);
+
+    } else if (event.touches.length === 0) {
+
+      inputUp();
 
     }
 
-    function mousemove (event) {
+  }
 
-        if (mouseIsDown === true) {
-            inputMove(event.pageX, event.pageY);
-        }
+  function inputStart(inputX, inputY) {
 
-    }
+    centerX = inputX;
+    centerY = inputY;
+    clearCanvas();
 
-    function mouseup (event) {
+  }
 
-        mouseIsDown = false;
-        inputUp();
+  function inputMove(inputX, inputY) {
 
-    }
+    // Angle from center of screen
+    angle = Math.atan2(inputY - centerY, inputX - centerX);
 
-    function touchEvent ( event ) {
+    // Distance from center in pixels
+    var ix = inputX;
+    var iy = inputY;
+    dist = Math.sqrt((ix -= centerX) * ix + (iy -= centerY) * iy);
 
-        if (event.type == 'touchmove') {
+    // Normalized magnitude (0-1) based on shortest screen side.
+    magnitude = map(dist, 0, shortest, 0, 1);
 
-            inputMove(event.touches[0].pageX, event.touches[0].pageY);
+    // Dispatch updated control vector
+    socket.emit('control-vector', {     angle: angle.toFixed(4),
+                                        magnitude: magnitude.toFixed(4),
+                                    });
 
-        } else if ( event.type == 'touchstart' ) {
+    // Draw UI
+    drawUI(inputX, inputY);
 
-            inputStart(event.touches[0].pageX, event.touches[0].pageY);
+  }
 
-        } else if ( event.touches.length === 0 ) {
+  function inputUp() {
 
-            inputUp();
+    if (magnitude === 0) {
 
-        }
+      // Touch never moved. Was tap.
+      socket.emit('control-tap', {});
 
-        // event.preventDefault();
-        // event.stopPropagation();
+    } else {
 
-    }
-
-    function inputStart(inputX, inputY){
-
-        centerX = inputX;
-        centerY = inputY;
-        clearCanvas();
-
-    }
-
-    function inputMove(inputX, inputY) {
-
-        //Angle from center of screen
-        angle = Math.atan2(inputY - centerY, inputX - centerX);
-
-        //Distance from center in pixels
-        var ix = inputX;
-        var iy = inputY;
-        dist = Math.sqrt( (ix -= centerX) * ix + (iy -= centerY) * iy );
-
-        //Normalized magnitude (0-1) based on shortest screen side.
-        magnitude = map(dist, 0, shortest, 0, 1);
-
-        //Dispatch updated control vector
-        socket.emit('control-vector', {     'angle': angle.toFixed(4),
-                                            'magnitude': magnitude.toFixed(4)
-                                        });
-        //Draw UI
-        drawUI(inputX, inputY);
+      // Touch finished. Set vectors to 0;
+      socket.emit('control-vector', {   angle: 0,
+                                        magnitude: 0,
+                                    });
+      magnitude = angle = 0;
 
     }
 
-    function inputUp() {
+    clearCanvas();
 
-        if (magnitude === 0) {
+  }
 
-          //Touch never moved. Was tap.
-          socket.emit('control-tap', {});
+  // Canvas drawing
+  function drawUI(tx,ty) {
 
+    clearCanvas();
+
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(tx, ty, 3);
+    ctx.strokeStyle = '#ccc';
+    ctx.stroke();
+
+    // Ring around center/origin
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // Ring around touch point
+    ctx.beginPath();
+    ctx.arc(tx, ty, 8, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(tx, ty);
+    ctx.rotate(angle);
+    var fingyOffset = 95;
+
+    ctx.fillStyle = '#bbb';
+    ctx.beginPath();
+    ctx.moveTo(0 + fingyOffset, 0);
+    ctx.lineTo(-24 + fingyOffset, -20);
+    ctx.lineTo(-19 + fingyOffset, 0);
+    ctx.lineTo(-24 + fingyOffset, 20);
+    ctx.fill();
+
+    ctx.restore();
+
+  }
+
+  function clearCanvas() {
+    ctx.clearRect(0, 0, screenWidth, screenHeight);
+  }
+
+  // This can be manually triggered
+  // for stress testing many simultaneous
+  // controllers without real humans.
+  this.simulateUserInput = function() {
+
+    var simInputX = 0;
+    var simInputY = 0;
+    var simInputVX = 0;
+    var simInputVY = 0;
+
+    setInterval(function() {
+
+      simInputX = (Math.random() * screenWidth) * 0.25 + (screenWidth * 0.375);
+      simInputY = (Math.random() * screenHeight) * 0.25 + (screenHeight * 0.375);
+      simInputVX = Math.random() * 10 - 5;
+
+      // Slightly favor upwards
+      simInputVY = Math.random() * 10 - 6;
+
+    }, 3000);
+
+    setInterval(function() {
+
+      simInputX += simInputVX;
+      simInputY += simInputVY;
+
+      if (Math.random() > 0.25) {
+        // Touchmove
+        inputMove(simInputX, simInputY);
+      }else {
+
+        if (Math.random() < 0.5) {
+          // Touchstart
+          centerX = Math.random() * screenWidth;
+          centerY = Math.random() * screenHeight + 20;
         } else {
-
-          //Touch finished. Set vectors to 0;
-          socket.emit('control-vector', {   'angle': 0,
-                                            'magnitude': 0
-                                        });
-          magnitude = angle = 0;
-
+          // Touchend
+          inputUp();
         }
 
-        clearCanvas();
+      }
 
-    }
+    }, 20);
 
-    //Canvas drawing
-    function drawUI(tx,ty) {
+  };
 
-        clearCanvas();
+  // Touchglow effect
+  $('body').touchglow({
 
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(tx, ty, 3);
-        ctx.strokeStyle = '#ccc';
-        ctx.stroke();
+    touchColor: '#fff',
+    touchBlurRadius: 0,
+    fadeInDuration: 25,
+    fadeOutDuration: 250,
 
-        //Ring around center/origin
-        ctx.beginPath();
-        ctx.arc(centerX,centerY,8,0,2*Math.PI);
-        ctx.stroke();
+    onUpdatePosition: function(x,y) {
+      return true;
 
-        //Ring around touch point
-        ctx.beginPath();
-        ctx.arc(tx,ty,8,0,2*Math.PI);
-        ctx.stroke();
+    },
 
-        ctx.save();
-        ctx.translate(tx, ty);
-        ctx.rotate(angle);
-        var fingyOffset = 95;
+    onFadeIn: function(fadeDur) {
+      $('#instruct').stop().fadeTo(fadeDur, 0.2);
+      return true;
+    },
 
-        ctx.fillStyle = "#bbb";
-        ctx.beginPath();
-        ctx.moveTo(0+fingyOffset, 0);
-        ctx.lineTo(-24+fingyOffset, -20);
-        ctx.lineTo(-19+fingyOffset, 0);
-        ctx.lineTo(-24+fingyOffset, 20);
-        ctx.fill();
+    onFadeOut: function(fadeDur) {
+      $('#instruct').stop().fadeTo(fadeDur, 1);
+      return true;
+    },
 
-        ctx.restore();
+  });
 
-    }
+  function map(value, low1, high1, low2, high2) {
 
-    function clearCanvas() {
-        ctx.clearRect ( 0 , 0 , screenWidth, screenHeight );
-    }
+    return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
 
-    this.simulateUserInput = function() {
-
-        var simInputX = 0;
-        var simInputY = 0;
-        var simInputVX = 0;
-        var simInputVY = 0;
-
-        setInterval(function () {
-
-            simInputX = (Math.random() * screenWidth) * 0.25 + (screenWidth * 0.375);
-            simInputY = (Math.random() * screenHeight) * 0.25 + (screenHeight * 0.375);
-            simInputVX = Math.random() * 10 - 5;
-            simInputVY = Math.random() * 10 - 6; //slightly favor upwards
-
-        }, 3000);
-
-        setInterval(function () {
-
-            simInputX += simInputVX;
-            simInputY += simInputVY;
-
-            if (Math.random() > 0.25){
-                //touchmove
-                inputMove(simInputX, simInputY);
-            }else {
-
-                if (Math.random()<0.5) {
-                    //touchstart
-                    centerX = Math.random() * screenWidth;
-                    centerY = Math.random() * screenHeight + 20;
-                } else {
-                    //touchend
-                    inputUp();
-                }
-
-            }
-
-        }, 20);
-
-    };
-
-    //Touchglow effect
-    $('body').touchglow({
-
-            touchColor: "#fff",
-            touchBlurRadius: 0,
-            fadeInDuration: 25,
-            fadeOutDuration: 250,
-
-        onUpdatePosition: function(x,y){
-            return true;
-
-        },
-        onFadeIn: function(fadeDur){
-            $('#instruct').stop().fadeTo(fadeDur, 0.2);
-            return true;
-        },
-        onFadeOut: function(fadeDur){
-            $('#instruct').stop().fadeTo(fadeDur, 1);
-            return true;
-        }
-
-    });
-
-    function map(value, low1, high1, low2, high2) {
-
-      return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
-
-    }
+  }
 
 };
