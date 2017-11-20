@@ -15,7 +15,6 @@ function Game() {
     var loseCallback;
     var pointsCallback;
     var stunCallback;
-    var trackCallback;
 
     /* ============== */
     /* PUBLIC METHODS */
@@ -28,13 +27,14 @@ function Game() {
 
     };
 
-    this.setCallbacks = function(forceDisconnect, win, lose, points, stun, track){
+    this.setCallbacks = function(forceDisconnect, win, lose, points, stun) {
+
         onForceDisconnectCallback = forceDisconnect;
         winCallback = win;
         loseCallback = lose;
         pointsCallback = points;
         stunCallback = stun;
-        trackCallback = track;
+
     };
 
     this.start = function() {
@@ -415,15 +415,6 @@ function Game() {
         //Reset everyone's score
         resetScoreboard();
 
-        //Dispatch game data for tracking
-        if(trackCallback){
-            var eventProps = {
-                numPlayers: flyers.length,
-                roundDuration: ROUND_DURATION
-            };
-            trackCallback.call(undefined, 'round-begin', eventProps);
-        }
-
     }
 
     function endRound() {
@@ -447,17 +438,6 @@ function Game() {
             for (var i = 1; i < flyers.length; i++) {
                 loseCallback.call(undefined, flyers[i].socketid);
             }
-        }
-
-        //Dispatch game data for tracking
-        if(trackCallback){
-            var eventProps = {
-                numPlayers: flyers.length,
-                winnerName: flyers[0].nickname,
-                highScore: flyers[0].score,
-                lowScore: flyers[flyers.length-1].score
-            };
-            trackCallback.call(undefined, 'round-complete', eventProps);
         }
 
     }

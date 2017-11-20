@@ -2,8 +2,8 @@
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
-// var io = require('socket.io')(http, {path: '/smash/socket.io'});
-var io = require('socket.io')(http);
+var io = require('socket.io')(http, {path: '/socket.io'});
+// var io = require('socket.io')(http);
 var path = require('path');
 var uaParser = require('ua-parser');
 var Puid = require('puid');
@@ -39,9 +39,6 @@ app.get('/', function (request, response){
     console.log('Serving controller.html to: ', device, ' running ', ua, ' on ', os);
     response.sendFile(__dirname + '/controller.html');
 
-    //Send tracking event
-    sendKeenEvent('node-serve-controller', { 'userAgent': ua, 'operatingSystem': os, 'device': device} );
-
 });
 app.get('/screen', function (request, response){
 
@@ -52,9 +49,6 @@ app.get('/screen', function (request, response){
     var ua = uaParser.parseUA(userAgent).toString();// -> "Safari 5.0.1"
     var os = uaParser.parseOS(userAgent).toString();// -> "iOS 5.1"
     var device = uaParser.parseDevice(userAgent).toString();// -> "iPhone"
-
-    //Send tracking event
-    sendKeenEvent('node-serve-screen', { 'userAgent': ua, 'operatingSystem': os, 'device': device} );
 
 });
 
@@ -79,14 +73,6 @@ io.on('connection', function(socket){
         usertype = data.usertype;
         nickname = purifyName(data.nickname);
         usercolor = data.usercolor;
-
-        if (usertype !== CLIENT_CONTROLLER) {
-            // TEMP. Since unity doesn't connect
-            // w proper data format yet.
-            console.log("UNITY CONNEcTION");
-            console.log(data);
-            usertype = CLIENT_SHARED_SCREEN;
-        }
 
         if (usertype == CLIENT_SHARED_SCREEN) {
 
@@ -227,9 +213,6 @@ io.on('connection', function(socket){
                         'usercolor' : usercolor
                         };
 
-        //Send tracking event
-        sendKeenEvent('node-new-user', dataObj );
-
         return JSON.stringify(dataObj);
 
     }
@@ -244,41 +227,3 @@ http.listen(portNumber, function(){
 
 });
 
-
-//Keen.io tracking
-var Keen = require('keen-js');
-var keenKeys = require('./public/js/keen.js').getKeys();
-var keenClient = new Keen({
-    projectId: keenKeys.projectId,
-    writeKey: keenKeys.writeKey
-});
-
-/**
-* Track an event with keen.io
-*/
-function sendKeenEvent(eventType, eventObj) {
-
-    // Add a timestamp to event parameters
-    eventObj.keen = {
-        timestamp: new Date().toISOString()
-    };
-
-    // Send data, with some basic error reporting
-    if (typeof keenClient !== 'undefined') {
-
-      keenClient.addEvent(eventType, eventObj, function(err, res){
-        if (err) {
-          console.log('Keen - ' + eventObj + ' submission failed');
-        }
-        else {
-          console.log('Keen - ' + eventObj + ' event sent successfully');
-        }
-      });
-
-    } else {
-
-      console.log('WARNING: Keen unavailable.\nMake sure you have included the keen.js file.');
-
-    }
-
-}
