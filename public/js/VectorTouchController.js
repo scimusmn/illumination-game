@@ -138,16 +138,31 @@ function VectorTouchController(socket) {
 
     clearCanvas();
 
+    // Fill background with rainbow currents
+    drawCurrents(tx, ty);
+
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
-    ctx.lineTo(tx, ty, 3);
-    ctx.strokeStyle = '#ccc';
+    ctx.lineTo(tx, ty);
+    ctx.strokeStyle = '#fff';
+    ctx.fillStyle = '#333';
+    ctx.fill();
     ctx.stroke();
 
     // Ring around center/origin
     ctx.beginPath();
     ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
+    ctx.fill();
     ctx.stroke();
+
+    // Screen cross-hair
+    /*    ctx.beginPath();
+        ctx.moveTo(centerX, 0);
+        ctx.lineTo(centerX, screenHeight);
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(screenWidth, centerY);
+        ctx.strokeStyle = '#c88';
+        ctx.stroke();*/
 
     // Ring around touch point
     ctx.beginPath();
@@ -159,7 +174,7 @@ function VectorTouchController(socket) {
     ctx.rotate(angle);
     var fingyOffset = 95;
 
-    ctx.fillStyle = '#bbb';
+    ctx.fillStyle = '#ddd';
     ctx.beginPath();
     ctx.moveTo(0 + fingyOffset, 0);
     ctx.lineTo(-24 + fingyOffset, -20);
@@ -169,6 +184,106 @@ function VectorTouchController(socket) {
 
     ctx.restore();
 
+  }
+
+  function drawCurrents(tx,ty) {
+
+    var padding = 15 + ((magnitude + 1.0) * 15);
+
+    // var padding = 30;
+
+    var xPos = 0;
+    var yPos = 0;
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = clamp(0.1 + (magnitude * 2.0), 0, 1.0);
+
+    yPos = ty - padding;
+
+    // Downward
+    while (yPos <= screenHeight) {
+
+      yPos += padding;
+      xPos = tx;
+
+      // Leftward
+      while (xPos >= 0) {
+        xPos -= padding;
+        drawArrow(xPos, yPos);
+      }
+
+      xPos = tx - padding;
+
+      // Rightward
+      while (xPos <= screenWidth) {
+        xPos += padding;
+        drawArrow(xPos, yPos);
+      }
+
+    }
+
+    // Upward
+    yPos = ty;
+    while (yPos >= 0) {
+
+      yPos -= padding;
+      xPos = tx;
+
+      // Leftward
+      while (xPos >= 0) {
+        xPos -= padding;
+        drawArrow(xPos, yPos);
+      }
+
+      xPos = tx - padding;
+
+      // Rightward
+      while (xPos <= screenWidth) {
+        xPos += padding;
+        drawArrow(xPos, yPos);
+      }
+
+    }
+
+  }
+
+  function drawArrow(xPos, yPos) {
+
+    // Length
+    // var r = clamp((0.5 + 1) * 5, min, max);
+    var r = (0.5 + 1) * 5;
+    var endX = xPos + r * Math.cos(angle);
+    var endY = yPos + r * Math.sin(angle);
+
+    var p1x = xPos + (r * .61) * Math.cos(angle - 20);
+    var p1y = yPos + (r * .61) * Math.sin(angle - 20);
+    var p2x = xPos + (r * .61) * Math.cos(angle + 20);
+    var p2y = yPos + (r * .61) * Math.sin(angle + 20);
+
+    ctx.strokeStyle = '#666';
+    var pdist = Math.sqrt((endX - xPos) * endX + (endY - yPos) * endY);
+
+    var a = xPos - centerX;
+    var b = yPos - centerY;
+    var c = Math.sqrt(a * a + b * b);
+
+    // Normalized (0-1) based on shortest screen side.
+    var pdist = map(c, 0, shortest, 0, 0.3) + 0.4;
+
+    ctx.strokeStyle = calcColor(0, 1, pdist);
+    ctx.beginPath();
+    ctx.moveTo(p1x, p1y);
+    ctx.lineTo(endX, endY);
+    ctx.lineTo(p2x, p2y);
+    ctx.stroke();
+
+  }
+
+  function calcColor(min, max, val) {
+    var minHue = 240;
+    var maxHue = 0;
+    var curPercent = (val - min) / (max - min);
+    var colString = 'hsl(' + ((curPercent * (maxHue - minHue)) + minHue) + ',100%,50%)';
+    return colString;
   }
 
   function clearCanvas() {
@@ -225,8 +340,9 @@ function VectorTouchController(socket) {
   $('body').touchglow({
 
     touchColor: '#fff',
-    touchBlurRadius: 0,
-    fadeInDuration: 25,
+    touchBlurRadius: 60,
+    touchSpread: 30,
+    fadeInDuration: 12,
     fadeOutDuration: 250,
 
     onUpdatePosition: function(x,y) {
@@ -235,7 +351,7 @@ function VectorTouchController(socket) {
     },
 
     onFadeIn: function(fadeDur) {
-      $('#instruct').stop().fadeTo(fadeDur, 0.2);
+      $('#instruct').stop().fadeTo(fadeDur, 0.01);
       return true;
     },
 
@@ -251,5 +367,9 @@ function VectorTouchController(socket) {
     return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
 
   }
+
+  function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+};
 
 };
