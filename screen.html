@@ -12,14 +12,18 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/vendor/TweenMax.min.js"></script>
   <script src="/js/vendor/jquery-1.12.4.min.js"></script>
-  <script src="/js/Game.js"></script>
+
+  <script src="/js/vendor/phaser-ninja-physics.min.js"></script>
+
+  <script src="/js/PhaserGame.js"></script>
+  <!-- <script src="/js/Game.js"></script> -->
 
   <script>
 
     $(document).ready(function(){
 
       var socket = io.connect('', {path: "/socket.io"});
-      var game = new Game();
+      // var game = new Game();
 
       //Let socket.io know this is the shared screen client
       socket.emit('register', {'usertype':'client_shared_screen'} );
@@ -32,23 +36,22 @@
         // TODO - Fix later
         var newName = data.nickname.substring(0, 15);
         data.nickname = newName;
-        game.addPlayer(data);
+        // game.addPlayer(data);
 
       });
 
       socket.on('remove-player', function(data){
 
-        // $('#messages').append($('<li>').html('<span style="color:'+data.usercolor+';">'+ data.nickname+'</span> has exited.'));
-        game.removePlayer(data);
+        // game.removePlayer(data);
 
       });
 
       socket.on('control-vector', function(data){
-        game.controlVector(data);
+        gameControlVector(data);
       });
 
       socket.on('control-tap', function(data){
-        game.controlTap(data);
+        gameControlTap(data);
       });
 
 
@@ -57,12 +60,12 @@
 
         var w = (this.window.innerWidth > 0) ? this.window.innerWidth : this.screen.width;
         var h = (this.window.innerHeight > 0) ? this.window.innerHeight : this.screen.height;
-        game.setBounds(0,0,w,h);
+        // game.setBounds(0,0,w,h);
 
       });
 
-      game.init($('#stage'));
-      game.setCallbacks(onForceDisconnect, onWin, onLose, onPoints, onStun);
+      // game.init($('#stage'));
+      // game.setCallbacks(onForceDisconnect, onWin, onLose, onPoints, onStun);
 
       function onForceDisconnect(userid) {
         //Emit idle player's socket id
@@ -90,10 +93,10 @@
   </script>
 
   <body>
-    <img src='/img/background.png'/>
-    <ul id="messages"></ul>
+<!--     <img src='/img/background.png'/>
+    <ul id="messages"></ul> -->
     <div id="stage"></div>
-    <h2 id="game-countdown"></h2>
+    <!-- <h2 id="game-countdown"></h2>
     <h3 id="join-msg">Visit<br/>play.smm.org</h3>
     <div id="new-round">
       <img src="/img/new-round-screen.png"/>
@@ -101,7 +104,7 @@
       <ul id="player-list">
         <li>No players have joined</li>
       </ul>
-    </div>
+    </div> -->
   </body>
 
 </html>
