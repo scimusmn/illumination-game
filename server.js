@@ -184,6 +184,7 @@ io.on('connection', function(socket) {
 
     if (!sharedScreenConnected) return;
     data.userid = userid;
+    console.log('socket control tap');
     io.sockets.connected[sharedScreenSID].emit('control-tap', data);
 
   });

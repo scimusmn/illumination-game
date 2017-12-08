@@ -15,6 +15,7 @@
 
   <script src="/js/vendor/phaser-ninja-physics.min.js"></script>
 
+  <script src="/js/BrickTileMap.js"></script>
   <script src="/js/PhaserGame.js"></script>
   <!-- <script src="/js/Game.js"></script> -->
 
@@ -51,6 +52,7 @@
       });
 
       socket.on('control-tap', function(data){
+        console.log('control-tap');
         gameControlTap(data);
       });
 
