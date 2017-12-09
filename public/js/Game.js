@@ -24,8 +24,8 @@ function Game() {
 
   /* Phaser variables */
   var flyerVector = {x:0, y:0};
-  var flyerSpeedVertical = 25;
-  var flyerSpeedHorizontal = 30;
+  var flyerSpeedVertical = 30;
+  var flyerSpeedHorizontal = 25;
   var flyerMagnitude = 0.0;
 
   var debugMode = true;
@@ -131,14 +131,15 @@ function Game() {
 
     // Make brick platforms a little sticky.
     // Default friction was 0.05
-    // flyerGroup.body.friction = 0.3;
+    flyerGroup.body.friction = 0.1;
 
-    // Default drag was 1.0
-    flyerGroup.body.drag = 1.0;
+    // How much air drag affects flyer
+    // Default drag was 1.0 (0-1 range)
+    flyerGroup.body.drag = 0.99;
 
     // Set bouncincess of bricks
     // Default is 0.3
-    // flyerGroup.body.bounciness = 222.3;
+    // flyerGroup.body.bounciness = 0.01;
 
     return [flyerGroup.body, flyerSprite];
 
@@ -156,8 +157,6 @@ function Game() {
       b.x -= (b.w / 2);
       b.y -= (b.h / 2);
     }
-
-    console.log(brickRects);
 
     var platform;
 
