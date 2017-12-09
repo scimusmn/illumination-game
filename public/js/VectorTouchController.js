@@ -309,7 +309,7 @@ function VectorTouchController(socket) {
       simInputVX = Math.random() * 10 - 5;
 
       // Slightly favor upwards
-      simInputVY = Math.random() * 10 - 6;
+      simInputVY = Math.random() * 10 - 7;
 
     }, 3000);
 

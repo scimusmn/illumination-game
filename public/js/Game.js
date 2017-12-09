@@ -1,7 +1,7 @@
 function Game() {
 
-  var ROUND_DURATION = 75;
-  var LOBBY_DURATION = 35;
+  var ROUND_DURATION = 30; // 75
+  var LOBBY_DURATION = 10; // 35
 
   var currentFrameRequest = 0;
   var flyers = [];
@@ -15,6 +15,283 @@ function Game() {
   var loseCallback;
   var pointsCallback;
   var stunCallback;
+
+  /* ================= */
+  /* PHASER GAME LAYER */
+  /* ================= */
+  var game = new Phaser.Game(1920, 1080, Phaser.AUTO, 'stage', { preload: phaserPreload, create: phaserCreate, update: phaserUpdate, render: phaserRender });
+
+  /* Phaser variables */
+  var flyerVector = {x:0, y:0};
+  var flyerSpeedVertical = 25;
+  var flyerSpeedHorizontal = 30;
+  var flyerMagnitude = 0.0;
+
+  var debugMode = true;
+  var cursors;
+  var brickPlatforms;
+  var allFlyersGroup;
+
+  function phaserPreload() {
+
+    /* Phaser game settings */
+
+    // Prevent game from pausing when browser loses focus
+    game.stage.disableVisibilityChange = true;
+
+    /* Preload all assets */
+
+    game.load.image('block', 'img/sprites/block.png');
+    game.load.image('block-damaged', 'img/sprites/block-damaged.png');
+    game.load.image('debug-block', 'img/sprites/square1.png');
+
+    game.load.spritesheet('ninja-tiles', 'img/sprites/ninja-tiles128.png', 128, 128, 34);
+
+    game.load.atlasJSONHash('ghost', 'img/sprites/ghost.png', 'img/sprites/ghost.json');
+
+    // Fonts
+    game.load.bitmapFont('carrier_command', 'fonts/bitmapFonts/carrier_command.png', 'fonts/bitmapFonts/carrier_command.xml');
+
+  }
+
+  function phaserCreate() {
+
+    // Physics system
+    game.physics.startSystem(Phaser.Physics.NINJA);
+
+    // Turn down gravity a bit (default was 0.2)
+    game.physics.ninja.gravity = 0.12;
+
+    // Keyboard for debug
+    cursors = game.input.keyboard.createCursorKeys();
+    spaceButton = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+    spaceButton.onDown.add(flyerBrickSwipe, this);
+
+    // Game objects
+    allFlyersGroup = game.add.group();
+
+    // Generate brick tile pattern.
+    createBrickPlatforms();
+
+  }
+
+  function addPhaserBody() {
+
+    var flyerGroup = allFlyersGroup.create(775, 380, '');
+
+    var flyerSprite = game.add.sprite(0, 0, 'ghost');
+    flyerSprite.scale.setTo(1.5, 1.5);
+    flyerSprite.name = 'flyer-sprite';
+
+    // Swipe collision object.
+    var flyerRange = game.add.sprite(0, 0, '');
+
+    flyerRange.anchor.x = 0.5;
+    flyerRange.anchor.y = 0.5;
+
+    flyerRange.width = 200;
+    flyerRange.height = 200;
+
+    // Display Name
+    // flyerName = flyerGroup.add.bitmapText(10, 100, 'carrier_command','Bodenator',34);
+    var style = { font: '18px Arial', fill: '#ffaaff' };
+    var flyerName = game.add.text(0, -70, 'Bodenator', style);
+    flyerName.anchor.x = 0.5;
+    flyerName.anchor.y = 0.5;
+
+    // Animation
+    var frames = Phaser.Animation.generateFrameNames('ghost_standing', 1, 7, '.png', 4);
+    flyerSprite.animations.add('idle', frames, 10, true, false);
+
+    frames = Phaser.Animation.generateFrameNames('ghost_walk', 1, 4, '.png', 4);
+    flyerSprite.animations.add('fly', frames, 10, true, false);
+
+    flyerSprite.animations.play('idle');
+    flyerSprite.tint = Math.random() * 0xffffff;
+    flyerSprite.anchor.x = 0.5;
+    flyerSprite.anchor.y = 0.5;
+
+    // Combine into single flyer sprite
+    flyerGroup.addChild(flyerRange);
+    flyerGroup.addChild(flyerName);
+    flyerGroup.addChild(flyerSprite);
+
+    game.physics.ninja.enableAABB(flyerGroup, false);
+
+    // Speed cap for flyers (default was 8)
+    flyerGroup.body.maxSpeed = 9;
+
+    return [flyerGroup.body, flyerSprite];
+
+  }
+
+  function createBrickPlatforms() {
+
+    brickPlatforms = game.add.group();
+
+    var brickRects = BrickTileMap; // Variable from ./BrickTileMap.js
+
+    // De-center all bricks (brick-mapper exports as centered)
+    for (var i = 0; i < brickRects.length; i++) {
+      var b = brickRects[i];
+      b.x -= (b.w / 2);
+      b.y -= (b.h / 2);
+    }
+
+    console.log(brickRects);
+
+    var platform;
+
+    for (var i = 0; i < brickRects.length; i++) {
+
+      var br = brickRects[i];
+
+      var platform = brickPlatforms.create(br.x, br.y, 'block');
+      platform.width = br.w;
+      platform.height = br.h;
+
+      game.physics.ninja.enable(platform, 3);
+      platform.body.immovable = true;
+      platform.body.gravityScale = 0;
+
+    }
+
+  }
+
+  function phaserUpdate() {
+
+    game.physics.ninja.collide(allFlyersGroup, brickPlatforms);
+
+    for (var i = 0; i < flyers.length; i++) {
+
+      if (debugMode == true) {
+        keyboardInput(flyers[0]);
+      }
+
+      controllerInput(flyers[i]);
+
+    }
+
+  }
+
+  function controllerInput(flyer) {
+
+    const fBody = flyer.phaserBody;
+    const fSprite = flyer.phaserSprite;
+
+    if (flyer.ax < 0) {
+
+      fBody.moveLeft(flyerSpeedHorizontal * Math.abs(flyer.ax));
+      fSprite.animations.play('fly');
+      flyer.dir = -1.0;
+      fSprite.scale.setTo(flyer.dir, 1.0);
+
+    } else if (flyer.ax > 0) {
+
+      fBody.moveRight(flyerSpeedHorizontal * Math.abs(flyer.ax));
+      fSprite.animations.play('fly');
+      flyer.dir = 1.0;
+      fSprite.scale.setTo(flyer.dir, 1.0);
+
+    } else {
+
+      fSprite.animations.play('idle');
+
+    }
+
+    if (flyer.ay < 0) {
+
+      fBody.moveUp(flyerSpeedVertical * Math.abs(flyer.ay));
+
+    } else if (flyer.ay > 0) {
+
+      fBody.moveDown(flyerSpeedVertical * Math.abs(flyer.ay));
+
+    }
+
+  }
+
+  function keyboardInput(flyer) {
+
+    const fBody = flyer.phaserBody;
+    const fSprite = flyer.phaserSprite;
+
+    if (cursors.left.isDown) {
+
+      fBody.moveLeft(flyerSpeedHorizontal);
+      fSprite.animations.play('fly');
+      flyer.dir = -1.0;
+      fSprite.scale.setTo(flyer.dir, 1.0);
+
+    } else if (cursors.right.isDown) {
+
+      fBody.moveRight(flyerSpeedHorizontal);
+      fSprite.animations.play('fly');
+      flyer.dir = 1.0;
+      fSprite.scale.setTo(flyer.dir, 1.0);
+
+    } else {
+
+      fSprite.animations.play('idle');
+
+    }
+
+    if (cursors.up.isDown) {
+
+      fBody.moveUp(flyerSpeedVertical);
+
+    } else if (cursors.down.isDown) {
+
+      fBody.moveDown(flyerSpeedVertical);
+
+    }
+
+  }
+
+  function flyerBrickSwipe(data) {
+
+    // Detect if any bricks were hit
+    // game.physics.ninja.overlap(flyerRange, brickPlatforms, flyerSwipedBrick, processKill, this);
+
+  }
+
+  function flyerSwipedBrick(_swiper, _brick) {
+
+    console.log('flyerSwipedBrick()', _brick);
+
+    if (_brick.key == 'block') {
+      _brick.loadTexture('block-damaged');
+    } else {
+      _brick.kill();
+
+      // TODO - If we don't plan to
+      // turn this brick back 'on'
+      // we should destroy, not kill.
+      // Otherwise, bring back into
+      // gameplay with 'revive'
+    }
+
+    return false;
+
+  }
+
+  function processKill() {
+
+  }
+
+  function phaserRender() {
+
+    if (debugMode == true) {
+
+      game.debug.text('flyer count: ' + flyers.length, 256, 64);
+
+      if (flyers.length > 0) {
+        game.debug.body(flyers[0].phaserBody);
+      }
+
+    }
+
+  }
 
   /* ============== */
   /* PUBLIC METHODS */
@@ -116,8 +393,6 @@ function Game() {
 
   this.addPlayer = function(data) {
 
-    console.log('Game.addPlayer: ' + data.nickname);
-
     // Add new flyer div to stage
     $(stageDiv).append('<div id="flyer_' + data.userid + '" class="flyer" ><p style="color:' + data.usercolor + ';">' + data.nickname + '</p><img id="fist" src="img/hero_fist.png"/><img id="idle" src="img/hero_idle.png"/><img id="fly" src="img/hero_fly.png"/></div>');
     var flyerDiv = $('#flyer_' + data.userid);
@@ -134,12 +409,18 @@ function Game() {
     TweenMax.set($(highlightRing), { css: { opacity:0.0 } });
     TweenMax.to($(highlightRing), 0.2, { css: { opacity:1, scale:0.9 }, ease:Power1.easeOut, delay:0.3, repeat:11, yoyo:true, onComplete: removeElement, onCompleteParams:[highlightRing] });
 
+    var phaserObj = addPhaserBody();
+    var pBody = phaserObj[0];
+    var pSprite = phaserObj[1];
+
     // Add to game loop
     var newFlyer = {    userid:data.userid,
                         socketid:data.socketid,
                         div:flyerDiv,
                         flyDiv:$(flyerDiv).children('#fly'),
                         idleDiv:$(flyerDiv).children('#idle'),
+                        phaserBody: pBody,
+                        phaserSprite: pSprite,
                         nickname:data.nickname,
                         color:data.usercolor,
                         deadCount: 0,
@@ -163,9 +444,12 @@ function Game() {
 
     console.log('Game.removePlayer: ' + data.nickname);
 
-    // Remove flyer from both stage and game loop
+    // Remove flyer from stage, phaser system, and game loop
     var flyer = lookupFlyer(data.userid);
     if (flyer !== undefined) $(flyer.div).remove();
+
+    // Remove Phaser sprite
+    flyer.phaserBody.sprite.destroy();
 
     for (i = flyers.length - 1; i >= 0; i--) {
       if (flyers[i].userid == data.userid) flyers.splice(i, 1);
@@ -181,13 +465,15 @@ function Game() {
     if (data.magnitude === 0) {
       // No acceleration
       f.gas = false;
-      f.ax = f.ay = 0;
     } else {
-      // Apply acceleration
+      // Is accelerating
       f.gas = true;
-      f.ax = data.magnitude * Math.cos(data.angle) * 0.8;
-      f.ay = data.magnitude * Math.sin(data.angle) * 0.8;
+
     }
+
+    // Set acceleration for phaser
+    f.ax = Math.cos(data.angle) * data.magnitude;
+    f.ay = Math.sin(data.angle) * data.magnitude;
 
   };
 
@@ -202,7 +488,7 @@ function Game() {
     TweenMax.to($(f.div).children('#fist'), 0.4, { css: { rotation: 330 * f.dir, opacity: 0 }, ease: Power3.easeOut });
 
     // Destroy asteroids
-    var pnts = smashAsteroids(f.x + 17, f.y + 25, f.dir);
+    var pnts = smashAsteroids(f.phaserBody.x + 17, f.phaserBody.y + 25, f.dir);
     if (pnts > 0) {
       f.score += pnts;
 
@@ -214,6 +500,9 @@ function Game() {
 
     // Stun others
     var didStun = attemptStun(f);
+
+    // Phaser attempt swipe (for bricks)
+    flyerBrickSwipe(data);
 
   };
 
@@ -227,9 +516,8 @@ function Game() {
     flyers.forEach(function(flyer) {
 
       if (flyer.stunned === true) {
-        // Stunned flyer remains still
-        flyer.vx = 0;
-        flyer.vy = 0;
+
+        // TODO: Freeze phaser physics object
 
         // Skip to next flyer
         return;
@@ -246,16 +534,12 @@ function Game() {
         flyer.flyDiv.hide();
         flyer.idleDiv.show();
 
-        // Friction
-        flyer.vx *= 0.99;
-
         flyer.deadCount++;
 
         if (flyer.deadCount > 8000) {
           // Assume player has lost connection. Remove from game.
           // Emit disconnect event to node
           if (onForceDisconnectCallback) {
-            console.log('disconnect userid:' + flyer.userid);
             onForceDisconnectCallback.call(undefined, flyer.userid);
           }
 
@@ -263,48 +547,8 @@ function Game() {
         }
       }
 
-      // Apply acceleration
-      flyer.vx += flyer.ax;
-      flyer.vy += flyer.ay;
-
-      // Apply Gravity
-      if (flyer.vy < 0) {
-        flyer.vy += 0.06;
-      } else {
-        flyer.vy += 0.006;
-      }
-
-      // Govern speed
-      flyer.vx = clamp(flyer.vx, -3, 4);
-      flyer.vy = clamp(flyer.vy, -4, 4);
-
-      // Move based on velocity
-      flyer.x += flyer.vx;
-      flyer.y += flyer.vy;
-
-      // Keep on stage
-      if (flyer.y >= stageBounds.floor + 30) {
-        flyer.y = stageBounds.ceil - 70;
-      } else if (flyer.y <= stageBounds.ceil - 70) {
-        flyer.y = stageBounds.floor + 30;
-      }
-
-      if (flyer.x >= stageBounds.right) {
-        flyer.x = stageBounds.left;
-      } else if (flyer.x <= stageBounds.left) {
-        flyer.x = stageBounds.right;
-      }
-
-      // Direction
-      if (flyer.ax < 0) {
-        flyer.dir = -1;
-      } else if (flyer.ax > 0) {
-        flyer.dir = 1;
-      }
-
-      // Update position
-      TweenLite.set($(flyer.div), { css: { left:flyer.x, top:flyer.y } });
-      TweenLite.set($(flyer.div).children('img'), { css: { scaleX:flyer.dir } });
+      // Update position based on Phaser physics body
+      TweenLite.set($(flyer.div), { css: { left:flyer.phaserBody.x, top:flyer.phaserBody.y } });
 
     });
 
@@ -381,18 +625,18 @@ function Game() {
         continue;
       }
 
-      of = flyers[i];
-      oX = parseInt($(of.div).css('left'), 10);
-      oY = parseInt($(of.div).css('top'), 10);
+      otherFlyer = flyers[i];
+      oX = parseInt(otherFlyer.phaserBody.x, 10);
+      oY = parseInt(otherFlyer.phaserBody.y, 10);
 
       if (dist(oX, oY, attackingFlyer.x, attackingFlyer.y) < stunRadius) {
 
         // Successful stun!
-        of.stunned = true;
-        TweenMax.to($(of.div), 0.2, { css: { opacity:0.5 }, ease:Power2.easeInOut, repeat:12, yoyo:true, onComplete: liftStun, onCompleteParams:[of] });
+        otherFlyer.stunned = true;
+        TweenMax.to($(otherFlyer.div), 0.2, { css: { opacity:0.5 }, ease:Power2.easeInOut, repeat:12, yoyo:true, onComplete: liftStun, onCompleteParams:[otherFlyer] });
 
         if (stunCallback) {
-          stunCallback.call(undefined, of.socketid);
+          stunCallback.call(undefined, otherFlyer.socketid);
         }
 
       }
@@ -475,8 +719,8 @@ function Game() {
     $(stageDiv).append(pDiv);
 
     var p = polarity(flyer.ax);
-    var tX = flyer.x + (p * -12) + 15;
-    var tY = flyer.y + 55;
+    var tX = flyer.phaserBody.x + (p * -12) + 15;
+    var tY = flyer.phaserBody.y + 55;
 
     // Starting point
     TweenLite.set($(pDiv), { css: { opacity: 0.35, left:tX, top:tY} });
