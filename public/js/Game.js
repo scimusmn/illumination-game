@@ -86,26 +86,10 @@ function Game() {
   function addPhaserBody() {
 
     var flyerGroup = allFlyersGroup.create(775, 380, '');
+    flyerGroup.width = 50;
+    flyerGroup.height = 70;
 
     var flyerSprite = game.add.sprite(0, 0, 'ghost');
-    flyerSprite.scale.setTo(1.5, 1.5);
-    flyerSprite.name = 'flyer-sprite';
-
-    // Swipe collision object.
-    var flyerRange = game.add.sprite(0, 0, '');
-
-    flyerRange.anchor.x = 0.5;
-    flyerRange.anchor.y = 0.5;
-
-    flyerRange.width = 200;
-    flyerRange.height = 200;
-
-    // Display Name
-    // flyerName = flyerGroup.add.bitmapText(10, 100, 'carrier_command','Bodenator',34);
-    var style = { font: '18px Arial', fill: '#ffaaff' };
-    var flyerName = game.add.text(0, -70, 'Bodenator', style);
-    flyerName.anchor.x = 0.5;
-    flyerName.anchor.y = 0.5;
 
     // Animation
     var frames = Phaser.Animation.generateFrameNames('ghost_standing', 1, 7, '.png', 4);
@@ -118,10 +102,19 @@ function Game() {
     flyerSprite.tint = Math.random() * 0xffffff;
     flyerSprite.anchor.x = 0.5;
     flyerSprite.anchor.y = 0.5;
+    flyerSprite.setScaleMinMax(-1.0, 1.0, 1.0, 1.0);
+
+    // Swipe collision object.
+    var flyerRange = game.add.sprite(0, 0, '');
+
+    flyerRange.anchor.x = 0.5;
+    flyerRange.anchor.y = 0.5;
+
+    flyerRange.width = 200;
+    flyerRange.height = 200;
 
     // Combine into single flyer sprite
     flyerGroup.addChild(flyerRange);
-    flyerGroup.addChild(flyerName);
     flyerGroup.addChild(flyerSprite);
 
     game.physics.ninja.enableAABB(flyerGroup, false);
@@ -135,11 +128,11 @@ function Game() {
 
     // How much air drag affects flyer
     // Default drag was 1.0 (0-1 range)
-    flyerGroup.body.drag = 0.99;
+    flyerGroup.body.drag = 0.988;
 
     // Set bouncincess of bricks
     // Default is 0.3
-    // flyerGroup.body.bounciness = 0.01;
+    flyerGroup.body.bounce = 0.36;
 
     return [flyerGroup.body, flyerSprite];
 
@@ -171,17 +164,6 @@ function Game() {
       game.physics.ninja.enable(platform, 3);
       platform.body.immovable = true;
       platform.body.gravityScale = 0;
-
-      // Make brick platforms a little sticky.
-      // Default friction was 0.05
-      // platform.body.friction = 223.5;
-
-      // Default drag was 1.0
-      // platform.body.drag = 999;
-
-      // Set bouncincess of bricks
-      // Default is 0.3
-      // platform.body.bounciness = 222.3;
 
     }
 
@@ -315,7 +297,7 @@ function Game() {
       game.debug.text('flyer count: ' + flyers.length, 256, 64);
 
       if (flyers.length > 0) {
-        game.debug.body(flyers[0].phaserBody);
+        game.debug.spriteBounds(flyers[0].phaserBody.sprite, '#F00', false);
       }
 
     }
