@@ -3,6 +3,7 @@ function Game() {
   var ROUND_DURATION = 30; // 75
   var LOBBY_DURATION = 10; // 35
 
+  var _this = this;
   var currentFrameRequest = 0;
   var flyers = [];
   var asteroids = [];
@@ -28,6 +29,7 @@ function Game() {
   var flyerMagnitude = 0.0;
 
   var debugMode = true;
+  var debugFlyerData = {userid:'123456789xxx', usercolor:'#FAA', nickname:'Debug', socketid:'debug-abcdef'};
   var cursors;
   var brickPlatforms;
   var allFlyersGroup;
@@ -65,13 +67,19 @@ function Game() {
     // Keyboard for debug
     cursors = game.input.keyboard.createCursorKeys();
     spaceButton = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-    spaceButton.onDown.add(flyerBrickSwipe, this);
+    spaceButton.onDown.add(() => {
+      _this.controlTap(debugFlyerData);
+    }, this);
 
     // Game objects
     allFlyersGroup = game.add.group();
 
     // Generate brick tile pattern.
     createBrickPlatforms();
+
+    if (debugMode == true) {
+      _this.addPlayer(debugFlyerData);
+    }
 
   }
 
@@ -121,6 +129,17 @@ function Game() {
     // Speed cap for flyers (default was 8)
     flyerGroup.body.maxSpeed = 9;
 
+    // Make brick platforms a little sticky.
+    // Default friction was 0.05
+    // flyerGroup.body.friction = 0.3;
+
+    // Default drag was 1.0
+    flyerGroup.body.drag = 1.0;
+
+    // Set bouncincess of bricks
+    // Default is 0.3
+    // flyerGroup.body.bounciness = 222.3;
+
     return [flyerGroup.body, flyerSprite];
 
   }
@@ -154,6 +173,17 @@ function Game() {
       platform.body.immovable = true;
       platform.body.gravityScale = 0;
 
+      // Make brick platforms a little sticky.
+      // Default friction was 0.05
+      // platform.body.friction = 223.5;
+
+      // Default drag was 1.0
+      // platform.body.drag = 999;
+
+      // Set bouncincess of bricks
+      // Default is 0.3
+      // platform.body.bounciness = 222.3;
+
     }
 
   }
@@ -164,12 +194,12 @@ function Game() {
 
     for (var i = 0; i < flyers.length; i++) {
 
-      if (debugMode == true) {
-        keyboardInput(flyers[0]);
-      }
-
       controllerInput(flyers[i]);
 
+    }
+
+    if (debugMode == true) {
+      keyboardInput(flyers[0]);
     }
 
   }
@@ -419,6 +449,7 @@ function Game() {
                         div:flyerDiv,
                         flyDiv:$(flyerDiv).children('#fly'),
                         idleDiv:$(flyerDiv).children('#idle'),
+                        fistDiv:$(flyerDiv).children('#fist'),
                         phaserBody: pBody,
                         phaserSprite: pSprite,
                         nickname:data.nickname,
@@ -446,10 +477,15 @@ function Game() {
 
     // Remove flyer from stage, phaser system, and game loop
     var flyer = lookupFlyer(data.userid);
-    if (flyer !== undefined) $(flyer.div).remove();
+    if (flyer !== undefined) {
 
-    // Remove Phaser sprite
-    flyer.phaserBody.sprite.destroy();
+      // Remove div from html
+      $(flyer.div).remove();
+
+      // Remove Phaser sprite
+      flyer.phaserBody.sprite.destroy();
+
+    }
 
     for (i = flyers.length - 1; i >= 0; i--) {
       if (flyers[i].userid == data.userid) flyers.splice(i, 1);
@@ -484,8 +520,8 @@ function Game() {
     if (f.stunned) return;
 
     // Swipe action
-    TweenLite.set($(f.div).children('#fist'), { css: { rotation: -60 * f.dir, opacity: 1, transformOrigin:'50% 100% 0' } });
-    TweenMax.to($(f.div).children('#fist'), 0.4, { css: { rotation: 330 * f.dir, opacity: 0 }, ease: Power3.easeOut });
+    TweenLite.set(f.fistDiv, { css: { rotation: -60 * f.dir, opacity: 1, transformOrigin:'50% 100% 0' } });
+    TweenMax.to(f.fistDiv, 0.4, { css: { rotation: 330 * f.dir, opacity: 0 }, ease: Power3.easeOut });
 
     // Destroy asteroids
     var pnts = smashAsteroids(f.phaserBody.x + 17, f.phaserBody.y + 25, f.dir);
@@ -829,6 +865,7 @@ function Game() {
   function clearAsteroids() {
 
     for (a = asteroids.length - 1; a >= 0; a--) {
+
       var ast = asteroids[a];
 
       // Fade out
@@ -836,11 +873,17 @@ function Game() {
 
       // Remove from game loop
       asteroids.splice(a, 1);
+
     }
 
   }
 
-  // Utils
+  /**
+   *
+   * Utility Methods
+   *
+   */
+
   function lookupFlyer(id) {
     for (var i = 0; i < flyers.length; i++) {
       if (flyers[i].userid == id) return flyers[i];
