@@ -12,13 +12,20 @@
 .flyer #fly{
     left: -15px;
     top: 25px;
+    /* Hiding to show Phaser's display */
+    display: none;
+    visibility: hidden;
 }
 .flyer #idle{
     /*top: 10px;*/
+    /* Hiding to show Phaser's display */
+    display: none;
+    visibility: hidden;
 }
 .flyer #cape{
     z-index: 4;
 }
+
 .puff{
     position: absolute;
     z-index: 1;
@@ -55,10 +62,10 @@
 }
 .highlightRing{
     position: absolute;
-    top: -14px;
+    top: -13px;
     left: -42px;
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     -moz-border-radius: 100%;
     -webkit-border-radius: 100%;
     border-radius: 100%;

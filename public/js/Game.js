@@ -654,7 +654,7 @@ function Game() {
       }
 
       // Update position based on Phaser physics body
-      TweenLite.set($(flyer.div), { css: { left:flyer.phaserBody.x, top:flyer.phaserBody.y } });
+      TweenLite.set($(flyer.div), { css: { left:flyer.phaserBody.x - (flyer.phaserBody.width * 0.6), top:flyer.phaserBody.y - (flyer.phaserBody.height * 0.9) } });
 
     });
 
