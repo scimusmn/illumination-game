@@ -594,7 +594,7 @@ function Game() {
     TweenMax.to(f.fistDiv, 0.4, { css: { rotation: 330 * f.dir, opacity: 0 }, ease: Power3.easeOut });
 
     // Destroy asteroids
-    var pnts = smashAsteroids(f.phaserBody.x + 17, f.phaserBody.y + 25, f.dir);
+    var pnts = smashAsteroids(f.phaserBody.x + 17, f.phaserBody.y + 25, f.dir, data.usercolor);
     if (pnts > 0) {
       f.score += pnts;
 
@@ -663,7 +663,7 @@ function Game() {
 
   }
 
-  function smashAsteroids(mineX, mineY, smashDir) {
+  function smashAsteroids(mineX, mineY, smashDir, ptColor) {
 
     var damageDealt = 0;
 
@@ -682,14 +682,14 @@ function Game() {
           // Normal asteroid requires one hit
           damageDealt = ast.health;
           ast.health = 0;
-          releasePoints(damageDealt, '#eee21c', aL - 10, aT - (ast.diam * 0.5) + 3, smashDir);
+          releasePoints(damageDealt, ptColor, aL - 10, aT - (ast.diam * 0.5) + 3, smashDir);
 
         } else {
 
           // Monster asteroid requires multiple swings
           damageDealt = 10 + Math.ceil(Math.random() * 15);
           ast.health -= damageDealt;
-          releasePoints(damageDealt, '#eee21c', aL - 10, aT - (ast.diam * 0.5) - 10, 0);
+          releasePoints(damageDealt, ptColor, aL - 10, aT - (ast.diam * 0.5) - 10, 0);
 
         }
 
