@@ -45,6 +45,7 @@ function Game() {
 
     game.load.image('block', 'img/sprites/block.png');
     game.load.image('block-damaged', 'img/sprites/block-damaged.png');
+    game.load.image('block-damaged-2', 'img/sprites/block-damaged-2.png');
     game.load.image('block-piece', 'img/sprites/block-piece.png');
 
     game.load.image('debug-block', 'img/sprites/square1.png');
@@ -124,6 +125,7 @@ function Game() {
 
     flyerRange.width = 150;
     flyerRange.height = 100;
+
     // game.physics.ninja.enableAABB(flyerRange, false);
     // flyerRange.body.immovable = true;
     // flyerRange.body.gravityScale = 0;
@@ -134,8 +136,6 @@ function Game() {
     flyerGroup.addChild(flyerSprite);
 
     game.physics.ninja.enableAABB(flyerGroup, false);
-
-
 
     // Speed cap for flyers (default was 8)
     flyerGroup.body.maxSpeed = 9;
@@ -283,31 +283,64 @@ function Game() {
 
   }
 
-  function flyerBrickSwipe(data) {
+  function flyerBrickSwipe(f) {
 
     // Detect if any bricks were hit
-    // game.physics.ninja.overlap(flyerRange, brickPlatforms, flyerSwipedBrick, processKill, this);
+
+    // Default to swing from upper left of flyer
+    var swipeRadius = 42;
+    var swipeCircle = {x:f.phaserBody.x, y:f.phaserBody.y + (f.phaserBody.height * 0.16), r:swipeRadius};
+
+    // If facing right, swipe from middle right
+    if (f.dir > 0) swipeCircle.x += f.phaserBody.width;
+
+    var brick;
+    var testRect;
+    var didBustBrick = false;
+
+    for (var i = brickPlatforms.children.length - 1; i >= 0; i--) {
+
+      brick = brickPlatforms.children[i];
+
+      // Skip bricks that are
+      // already smashed
+      if (!brick.visible) {
+        continue;
+      }
+
+      testRect = {x:brick.x, y:brick.y, w:brick.width, h:brick.height};
+
+      if (rectCircleCollision(swipeCircle, testRect)) {
+        damageBrick(brick, f.dir);
+        didBustBrick = true;
+      }
+
+    }
+
+    return didBustBrick;
 
   }
 
-  function flyerSwipedBrick(_swiper, _brick) {
+  function damageBrick(brick, dir) {
 
-    console.log('flyerSwipedBrick()', _brick);
+    if (brick.key == 'block') {
+      brick.loadTexture('block-damaged');
 
-    if (_brick.key == 'block') {
-      _brick.loadTexture('block-damaged');
+    } else if (brick.key == 'block-damaged') {
+      brick.loadTexture('block-damaged-2');
+
     } else {
-      _brick.kill();
+      brick.kill();
 
       // TODO - If we don't plan to
       // turn this brick back 'on'
       // we should destroy, not kill.
       // Otherwise, bring back into
       // gameplay with 'revive'
+
+      particleBrickBurst(brick.x, brick.y, dir);
+
     }
-
-    return false;
-
   }
 
   function particleBrickBurst(x,y,dir) {
@@ -316,7 +349,7 @@ function Game() {
     brickEmitter.x = x;
     brickEmitter.y = y;
 
-    brickEmitter.setXSpeed(20 * dir, 600 * dir);
+    brickEmitter.setXSpeed(20 * dir, 400 * dir);
 
     //  The first parameter sets the effect to "explode" which means all particles are emitted at once
     //  The second gives each particle a 2000ms lifespan
@@ -325,11 +358,18 @@ function Game() {
 
     // brickEmitter.start(true, 5500, null, 10);
 
-    // brickEmitter.explode(8888, Math.round(Math.random() * 2 + 3));
+    brickEmitter.explode(6666, Math.round(Math.random() * 2 + 3));
 
   }
 
-  function processKill() {
+  function phaserLevelReset() {
+
+    // Revive all killed bricks.
+    for (var i = brickPlatforms.children.length - 1; i >= 0; i--) {
+      var brick = brickPlatforms.children[i];
+      brick.revive();
+      brick.loadTexture('block');
+    }
 
   }
 
@@ -342,6 +382,7 @@ function Game() {
       if (flyers.length > 0) {
         game.debug.body(flyers[0].phaserBody.sprite, '#F00', false);
         game.debug.spriteBounds(flyers[0].phaserBody.sprite.getChildAt(1), '#0FF', false);
+
         // game.debug.spriteBounds(flyers[0].phaserBody.sprite.getChildAt(0), '#F0F', false);
         game.debug.body(flyers[0].phaserBody.sprite.getChildAt(0), '#F0F', false);
       }
@@ -565,10 +606,7 @@ function Game() {
     var didStun = attemptStun(f);
 
     // Phaser attempt swipe (for bricks)
-    flyerBrickSwipe(data);
-
-    // TEMP - move to brick destroy
-    particleBrickBurst(f.phaserBody.x, f.phaserBody.y, f.dir);
+    flyerBrickSwipe(f);
 
   };
 
@@ -729,6 +767,9 @@ function Game() {
 
     // Reset everyone's score
     resetScoreboard();
+
+    // Reset bricks and physics
+    phaserLevelReset();
 
   }
 
@@ -942,6 +983,34 @@ function Game() {
 
   function roundToNearest(val, n) {
     return n * Math.round(val / n);
+  }
+
+  // Return true if the rectangle and circle are colliding
+  function rectCircleCollision(circle, rect) {
+    var distX = Math.abs(circle.x - rect.x - rect.w / 2);
+    var distY = Math.abs(circle.y - rect.y - rect.h / 2);
+
+    if (distX > (rect.w / 2 + circle.r)) {
+      return false;
+    }
+
+    if (distY > (rect.h / 2 + circle.r)) {
+      return false;
+    }
+
+    if (distX <= (rect.w / 2)) {
+      return true;
+    }
+
+    if (distY <= (rect.h / 2)) {
+      return true;
+    }
+
+    var dx = distX - rect.w / 2;
+    var dy = distY - rect.h / 2;
+
+    return (dx * dx + dy * dy <= (circle.r * circle.r));
+
   }
 
   function polarity(x) {
