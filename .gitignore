@@ -3,4 +3,9 @@ public/video/*
 work/
 *.webm
 *.log
+
+# Compiled Python files
+*.pyc
+
+# Production deploy config
 pm2-env.json
