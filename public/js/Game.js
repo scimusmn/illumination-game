@@ -27,7 +27,7 @@ function Game() {
   var flyerSpeedHorizontal = 25;
 
   var debugMode = true;
-  var debugFlyerData = {userid:'123456789xxx', usercolor:'#FAA', nickname:'Debug', socketid:'debug-abcdef'};
+  var debugFlyerData = {userid:'123456789xxx', usercolor:'#FD6E83', nickname:'Debug', socketid:'debug-abcdef'};
   var cursors;
   var brickPlatforms;
   var allFlyersGroup;
@@ -96,7 +96,9 @@ function Game() {
 
   }
 
-  function addPhaserBody() {
+  function addPhaserBody(userdata) {
+
+    var userColor = parseInt(userdata.usercolor.replace(/^#/, ''), 16);
 
     var flyerGroup = allFlyersGroup.create(775, 380, '');
     flyerGroup.width = 50;
@@ -112,7 +114,7 @@ function Game() {
     flyerSprite.animations.add('fly', frames, 10, true, false);
 
     flyerSprite.animations.play('idle');
-    flyerSprite.tint = Math.random() * 0xffffff;
+    flyerSprite.tint = userColor;
     flyerSprite.anchor.x = 0.5;
     flyerSprite.anchor.y = 0.5;
     flyerSprite.setScaleMinMax(-1.0, 1.0, 1.0, 1.0);
@@ -288,8 +290,8 @@ function Game() {
     // Detect if any bricks were hit
 
     // Default to swing from upper left of flyer
-    var swipeRadius = 42;
-    var swipeCircle = {x:f.phaserBody.x, y:f.phaserBody.y + (f.phaserBody.height * 0.16), r:swipeRadius};
+    var swipeRadius = 50;
+    var swipeCircle = {x:f.phaserBody.x, y:f.phaserBody.y + (f.phaserBody.height * 0.125), r:swipeRadius};
 
     // If facing right, swipe from middle right
     if (f.dir > 0) swipeCircle.x += f.phaserBody.width;
@@ -507,7 +509,7 @@ function Game() {
     TweenMax.set($(highlightRing), { css: { opacity:0.0 } });
     TweenMax.to($(highlightRing), 0.2, { css: { opacity:1, scale:0.9 }, ease:Power1.easeOut, delay:0.3, repeat:11, yoyo:true, onComplete: removeElement, onCompleteParams:[highlightRing] });
 
-    var phaserObj = addPhaserBody();
+    var phaserObj = addPhaserBody(data);
     var pBody = phaserObj[0];
     var pSprite = phaserObj[1];
 
