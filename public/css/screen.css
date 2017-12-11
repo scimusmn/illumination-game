@@ -5,7 +5,7 @@
 }
 
 body {
-    color:#acaaad;
+    color:#eee;
     font: 13px Helvetica, Arial;
     background: #000;
 }
@@ -29,10 +29,11 @@ body {
 #game-countdown {
     position: absolute;
     text-align: center;
-    right: 50px;
+    right: 0px;
     bottom: 0px;
-    font-size: 10em;
-    color: #ddd;
+    font-size: 11em;
+    padding: 5px 20px;
+    background: black;
 }
 
 #join-msg{
@@ -56,10 +57,11 @@ body {
 #new-round #round-countdown {
     position: absolute;
     text-align: center;
-    right: 350px;
+    right: 265px;
+    width: 300px;
     top: 610px;
-    font-size: 8em;
-    color: #ddd;
+    font-size: 11em;
+    color: #fff;
 }
 
 #new-round #player-list {

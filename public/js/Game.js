@@ -1,7 +1,7 @@
 function Game() {
 
-  var ROUND_DURATION = 30; // 75
-  var LOBBY_DURATION = 10; // 35
+  var ROUND_DURATION = 70; // 75
+  var LOBBY_DURATION = 30; // 35
 
   var _this = this;
   var currentFrameRequest = 0;
