@@ -142,6 +142,7 @@ function VectorTouchController(socket) {
     drawCurrents(tx, ty);
 
     ctx.beginPath();
+    ctx.lineWidth = 5 - (2 * magnitude);
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(tx, ty);
     ctx.strokeStyle = '#fff';
@@ -151,7 +152,8 @@ function VectorTouchController(socket) {
 
     // Ring around center/origin
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
+    ctx.lineWidth = (3 * magnitude);
+    ctx.arc(centerX, centerY, 12 - (4 * magnitude), 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
 
@@ -254,10 +256,10 @@ function VectorTouchController(socket) {
     var endX = xPos + r * Math.cos(angle);
     var endY = yPos + r * Math.sin(angle);
 
-    var p1x = xPos + (r * .61) * Math.cos(angle - 20);
-    var p1y = yPos + (r * .61) * Math.sin(angle - 20);
-    var p2x = xPos + (r * .61) * Math.cos(angle + 20);
-    var p2y = yPos + (r * .61) * Math.sin(angle + 20);
+    var p1x = xPos + (r * .81) * Math.cos(angle - 83);
+    var p1y = yPos + (r * .81) * Math.sin(angle - 83);
+    var p2x = xPos + (r * .81) * Math.cos(angle + 83);
+    var p2y = yPos + (r * .81) * Math.sin(angle + 83);
 
     ctx.strokeStyle = '#666';
     var pdist = Math.sqrt((endX - xPos) * endX + (endY - yPos) * endY);
@@ -307,7 +309,7 @@ function VectorTouchController(socket) {
       simInputVX = Math.random() * 10 - 5;
 
       // Slightly favor upwards
-      simInputVY = Math.random() * 10 - 6;
+      simInputVY = Math.random() * 10 - 7;
 
     }, 3000);
 

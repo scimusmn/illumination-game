@@ -7,11 +7,13 @@
 body {
     color:#acaaad;
     font: 13px Helvetica, Arial;
-    background: #222;
+    background: #000;
 }
 
 #stage {
-
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 #messages {

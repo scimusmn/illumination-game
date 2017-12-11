@@ -1,8 +1,9 @@
 function Game() {
 
-  var ROUND_DURATION = 75;
-  var LOBBY_DURATION = 35;
+  var ROUND_DURATION = 30; // 75
+  var LOBBY_DURATION = 10; // 35
 
+  var _this = this;
   var currentFrameRequest = 0;
   var flyers = [];
   var asteroids = [];
@@ -15,6 +16,382 @@ function Game() {
   var loseCallback;
   var pointsCallback;
   var stunCallback;
+
+  /* ================= */
+  /* PHASER GAME LAYER */
+  /* ================= */
+  var game = new Phaser.Game(1920, 1080, Phaser.AUTO, 'stage', { preload: phaserPreload, create: phaserCreate, update: phaserUpdate, render: phaserRender });
+
+  /* Phaser variables */
+  var flyerSpeedVertical = 30;
+  var flyerSpeedHorizontal = 25;
+
+  var debugMode = true;
+  var debugFlyerData = {userid:'123456789xxx', usercolor:'#FD6E83', nickname:'Debug', socketid:'debug-abcdef'};
+  var cursors;
+  var brickPlatforms;
+  var allFlyersGroup;
+
+  var brickEmitter;
+
+  function phaserPreload() {
+
+    /* Phaser game settings */
+
+    // Prevent game from pausing when browser loses focus
+    game.stage.disableVisibilityChange = true;
+
+    /* Preload all assets */
+
+    game.load.image('block', 'img/sprites/block.png');
+    game.load.image('block-damaged', 'img/sprites/block-damaged.png');
+    game.load.image('block-damaged-2', 'img/sprites/block-damaged-2.png');
+    game.load.image('block-piece', 'img/sprites/block-piece.png');
+
+    game.load.image('debug-block', 'img/sprites/square1.png');
+
+    game.load.atlasJSONHash('ghost', 'img/sprites/ghost.png', 'img/sprites/ghost.json');
+
+    // Fonts
+    game.load.bitmapFont('carrier_command', 'fonts/bitmapFonts/carrier_command.png', 'fonts/bitmapFonts/carrier_command.xml');
+
+  }
+
+  function phaserCreate() {
+
+    // Physics system
+    game.physics.startSystem(Phaser.Physics.NINJA);
+
+    // Turn down gravity a bit (default was 0.2)
+    game.physics.ninja.gravity = 0.12;
+
+    // Keyboard for debug
+    cursors = game.input.keyboard.createCursorKeys();
+    spaceButton = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+    spaceButton.onDown.add(() => {
+      _this.controlTap(debugFlyerData);
+    }, this);
+
+    // Prepare particle effects
+    brickEmitter = game.add.emitter(0, 0, 100);
+    brickEmitter.physicsBodyType = Phaser.Physics.NINJA;
+    brickEmitter.enableBody = true;
+    brickEmitter.makeParticles('block-piece', 0, 100, true, true);
+    brickEmitter.gravity = 620;
+    brickEmitter.bounce.setTo(0.3, 0.4);
+    brickEmitter.setScale(0.2, 0.4, 0.2, 0.4);
+
+    // brickEmitter.setAlpha(0.6, 0.0, 8888, Phaser.Easing.Quintic.In, false);
+    brickEmitter.setAlpha(0.15, 0.8);
+
+    // Game objects
+    allFlyersGroup = game.add.group();
+
+    // Generate brick tile pattern.
+    createBrickPlatforms();
+
+    if (debugMode == true) {
+      _this.addPlayer(debugFlyerData);
+    }
+
+  }
+
+  function addPhaserBody(userdata) {
+
+    var userColor = parseInt(userdata.usercolor.replace(/^#/, ''), 16);
+
+    var flyerGroup = allFlyersGroup.create(775, 380, '');
+    flyerGroup.width = 50;
+    flyerGroup.height = 70;
+
+    var flyerSprite = game.add.sprite(0, 0, 'ghost');
+
+    // Animation
+    var frames = Phaser.Animation.generateFrameNames('ghost_standing', 1, 7, '.png', 4);
+    flyerSprite.animations.add('idle', frames, 10, true, false);
+
+    frames = Phaser.Animation.generateFrameNames('ghost_walk', 1, 4, '.png', 4);
+    flyerSprite.animations.add('fly', frames, 10, true, false);
+
+    flyerSprite.animations.play('idle');
+    flyerSprite.tint = userColor;
+    flyerSprite.anchor.x = 0.5;
+    flyerSprite.anchor.y = 0.5;
+    flyerSprite.setScaleMinMax(-1.0, 1.0, 1.0, 1.0);
+
+    // Swipe collision object.
+    var flyerRange = game.add.sprite(0, 0, '');
+
+    flyerRange.anchor.x = 0.5;
+    flyerRange.anchor.y = 0.5;
+
+    flyerRange.width = 150;
+    flyerRange.height = 100;
+
+    // game.physics.ninja.enableAABB(flyerRange, false);
+    // flyerRange.body.immovable = true;
+    // flyerRange.body.gravityScale = 0;
+    // flyerRange.body.moves = false;
+
+    // Combine into single flyer sprite
+    flyerGroup.addChild(flyerRange);
+    flyerGroup.addChild(flyerSprite);
+
+    game.physics.ninja.enableAABB(flyerGroup, false);
+
+    // Speed cap for flyers (default was 8)
+    flyerGroup.body.maxSpeed = 9;
+
+    // Make brick platforms a little sticky.
+    // Default friction was 0.05
+    flyerGroup.body.friction = 0.1;
+
+    // How much air drag affects flyer
+    // Default drag was 1.0 (0-1 range)
+    flyerGroup.body.drag = 0.988;
+
+    // Set bouncincess of bricks
+    // Default is 0.3
+    flyerGroup.body.bounce = 0.36;
+
+    return [flyerGroup.body, flyerSprite];
+
+  }
+
+  function createBrickPlatforms() {
+
+    brickPlatforms = game.add.group();
+
+    var brickRects = BrickTileMap; // Variable from ./BrickTileMap.js
+
+    // De-center all bricks (brick-mapper exports as centered)
+    for (var i = 0; i < brickRects.length; i++) {
+      var b = brickRects[i];
+      b.x -= (b.w / 2);
+      b.y -= (b.h / 2);
+    }
+
+    var platform;
+
+    for (var i = 0; i < brickRects.length; i++) {
+
+      var br = brickRects[i];
+
+      var platform = brickPlatforms.create(br.x, br.y, 'block');
+      platform.width = br.w;
+      platform.height = br.h;
+
+      game.physics.ninja.enable(platform, 3);
+      platform.body.immovable = true;
+      platform.body.gravityScale = 0;
+
+    }
+
+  }
+
+  function phaserUpdate() {
+
+    // Collisions between flyers and brick platforms
+    game.physics.ninja.collide(allFlyersGroup, brickPlatforms);
+
+    // Brick pieces... (not working)
+    // game.physics.ninja.collide(brickEmitter, brickPlatforms);
+
+    for (var i = 0; i < flyers.length; i++) {
+
+      controllerInput(flyers[i]);
+
+    }
+
+    if (debugMode == true) {
+      keyboardInput(flyers[0]);
+    }
+
+  }
+
+  function controllerInput(flyer) {
+
+    const fBody = flyer.phaserBody;
+    const fSprite = flyer.phaserSprite;
+
+    if (flyer.ax < 0) {
+
+      fBody.moveLeft(flyerSpeedHorizontal * Math.abs(flyer.ax));
+      fSprite.animations.play('fly');
+      flyer.dir = -1.0;
+      fSprite.scale.setTo(flyer.dir, 1.0);
+
+    } else if (flyer.ax > 0) {
+
+      fBody.moveRight(flyerSpeedHorizontal * Math.abs(flyer.ax));
+      fSprite.animations.play('fly');
+      flyer.dir = 1.0;
+      fSprite.scale.setTo(flyer.dir, 1.0);
+
+    } else {
+
+      fSprite.animations.play('idle');
+
+    }
+
+    if (flyer.ay < 0) {
+
+      fBody.moveUp(flyerSpeedVertical * Math.abs(flyer.ay));
+
+    } else if (flyer.ay > 0) {
+
+      fBody.moveDown(flyerSpeedVertical * Math.abs(flyer.ay));
+
+    }
+
+  }
+
+  function keyboardInput(flyer) {
+
+    if (flyers.length == 0) return;
+
+    const fBody = flyer.phaserBody;
+    const fSprite = flyer.phaserSprite;
+
+    if (cursors.left.isDown) {
+
+      fBody.moveLeft(flyerSpeedHorizontal);
+      fSprite.animations.play('fly');
+      flyer.dir = -1.0;
+      fSprite.scale.setTo(flyer.dir, 1.0);
+
+    } else if (cursors.right.isDown) {
+
+      fBody.moveRight(flyerSpeedHorizontal);
+      fSprite.animations.play('fly');
+      flyer.dir = 1.0;
+      fSprite.scale.setTo(flyer.dir, 1.0);
+
+    } else {
+
+      fSprite.animations.play('idle');
+
+    }
+
+    if (cursors.up.isDown) {
+
+      fBody.moveUp(flyerSpeedVertical);
+
+    } else if (cursors.down.isDown) {
+
+      fBody.moveDown(flyerSpeedVertical);
+
+    }
+
+  }
+
+  function flyerBrickSwipe(f) {
+
+    // Detect if any bricks were hit
+
+    // Default to swing from upper left of flyer
+    var swipeRadius = 50;
+    var swipeCircle = {x:f.phaserBody.x, y:f.phaserBody.y + (f.phaserBody.height * 0.125), r:swipeRadius};
+
+    // If facing right, swipe from middle right
+    if (f.dir > 0) swipeCircle.x += f.phaserBody.width;
+
+    var brick;
+    var testRect;
+    var didBustBrick = false;
+
+    for (var i = brickPlatforms.children.length - 1; i >= 0; i--) {
+
+      brick = brickPlatforms.children[i];
+
+      // Skip bricks that are
+      // already smashed
+      if (!brick.visible) {
+        continue;
+      }
+
+      testRect = {x:brick.x, y:brick.y, w:brick.width, h:brick.height};
+
+      if (rectCircleCollision(swipeCircle, testRect)) {
+        damageBrick(brick, f.dir);
+        didBustBrick = true;
+      }
+
+    }
+
+    return didBustBrick;
+
+  }
+
+  function damageBrick(brick, dir) {
+
+    if (brick.key == 'block') {
+      brick.loadTexture('block-damaged');
+
+    } else if (brick.key == 'block-damaged') {
+      brick.loadTexture('block-damaged-2');
+
+    } else {
+      brick.kill();
+
+      // TODO - If we don't plan to
+      // turn this brick back 'on'
+      // we should destroy, not kill.
+      // Otherwise, bring back into
+      // gameplay with 'revive'
+
+      particleBrickBurst(brick.x, brick.y, dir);
+
+    }
+  }
+
+  function particleBrickBurst(x,y,dir) {
+
+    //  Position the emitter where the event was
+    brickEmitter.x = x;
+    brickEmitter.y = y;
+
+    brickEmitter.setXSpeed(20 * dir, 400 * dir);
+
+    //  The first parameter sets the effect to "explode" which means all particles are emitted at once
+    //  The second gives each particle a 2000ms lifespan
+    //  The third is ignored when using burst/explode mode
+    //  The final parameter (10) is how many particles will be emitted in this single burst
+
+    // brickEmitter.start(true, 5500, null, 10);
+
+    brickEmitter.explode(6666, Math.round(Math.random() * 2 + 3));
+
+  }
+
+  function phaserLevelReset() {
+
+    // Revive all killed bricks.
+    for (var i = brickPlatforms.children.length - 1; i >= 0; i--) {
+      var brick = brickPlatforms.children[i];
+      brick.revive();
+      brick.loadTexture('block');
+    }
+
+  }
+
+  function phaserRender() {
+
+    if (debugMode == true) {
+
+      game.debug.text('flyer count: ' + flyers.length, 256, 64);
+
+      if (flyers.length > 0) {
+        game.debug.body(flyers[0].phaserBody.sprite, '#F00', false);
+        game.debug.spriteBounds(flyers[0].phaserBody.sprite.getChildAt(1), '#0FF', false);
+
+        // game.debug.spriteBounds(flyers[0].phaserBody.sprite.getChildAt(0), '#F0F', false);
+        game.debug.body(flyers[0].phaserBody.sprite.getChildAt(0), '#F0F', false);
+      }
+
+    }
+
+  }
 
   /* ============== */
   /* PUBLIC METHODS */
@@ -116,8 +493,6 @@ function Game() {
 
   this.addPlayer = function(data) {
 
-    console.log('Game.addPlayer: ' + data.nickname);
-
     // Add new flyer div to stage
     $(stageDiv).append('<div id="flyer_' + data.userid + '" class="flyer" ><p style="color:' + data.usercolor + ';">' + data.nickname + '</p><img id="fist" src="img/hero_fist.png"/><img id="idle" src="img/hero_idle.png"/><img id="fly" src="img/hero_fly.png"/></div>');
     var flyerDiv = $('#flyer_' + data.userid);
@@ -134,12 +509,19 @@ function Game() {
     TweenMax.set($(highlightRing), { css: { opacity:0.0 } });
     TweenMax.to($(highlightRing), 0.2, { css: { opacity:1, scale:0.9 }, ease:Power1.easeOut, delay:0.3, repeat:11, yoyo:true, onComplete: removeElement, onCompleteParams:[highlightRing] });
 
+    var phaserObj = addPhaserBody(data);
+    var pBody = phaserObj[0];
+    var pSprite = phaserObj[1];
+
     // Add to game loop
     var newFlyer = {    userid:data.userid,
                         socketid:data.socketid,
                         div:flyerDiv,
                         flyDiv:$(flyerDiv).children('#fly'),
                         idleDiv:$(flyerDiv).children('#idle'),
+                        fistDiv:$(flyerDiv).children('#fist'),
+                        phaserBody: pBody,
+                        phaserSprite: pSprite,
                         nickname:data.nickname,
                         color:data.usercolor,
                         deadCount: 0,
@@ -163,9 +545,17 @@ function Game() {
 
     console.log('Game.removePlayer: ' + data.nickname);
 
-    // Remove flyer from both stage and game loop
+    // Remove flyer from stage, phaser system, and game loop
     var flyer = lookupFlyer(data.userid);
-    if (flyer !== undefined) $(flyer.div).remove();
+    if (flyer !== undefined) {
+
+      // Remove div from html
+      $(flyer.div).remove();
+
+      // Remove Phaser sprite
+      flyer.phaserBody.sprite.destroy();
+
+    }
 
     for (i = flyers.length - 1; i >= 0; i--) {
       if (flyers[i].userid == data.userid) flyers.splice(i, 1);
@@ -181,13 +571,15 @@ function Game() {
     if (data.magnitude === 0) {
       // No acceleration
       f.gas = false;
-      f.ax = f.ay = 0;
     } else {
-      // Apply acceleration
+      // Is accelerating
       f.gas = true;
-      f.ax = data.magnitude * Math.cos(data.angle) * 0.8;
-      f.ay = data.magnitude * Math.sin(data.angle) * 0.8;
+
     }
+
+    // Set acceleration for phaser
+    f.ax = Math.cos(data.angle) * data.magnitude;
+    f.ay = Math.sin(data.angle) * data.magnitude;
 
   };
 
@@ -198,11 +590,11 @@ function Game() {
     if (f.stunned) return;
 
     // Swipe action
-    TweenLite.set($(f.div).children('#fist'), { css: { rotation: -60 * f.dir, opacity: 1, transformOrigin:'50% 100% 0' } });
-    TweenMax.to($(f.div).children('#fist'), 0.4, { css: { rotation: 330 * f.dir, opacity: 0 }, ease: Power3.easeOut });
+    TweenLite.set(f.fistDiv, { css: { rotation: -60 * f.dir, opacity: 1, transformOrigin:'50% 100% 0' } });
+    TweenMax.to(f.fistDiv, 0.4, { css: { rotation: 330 * f.dir, opacity: 0 }, ease: Power3.easeOut });
 
     // Destroy asteroids
-    var pnts = smashAsteroids(f.x + 17, f.y + 25, f.dir);
+    var pnts = smashAsteroids(f.phaserBody.x + 17, f.phaserBody.y + 25, f.dir);
     if (pnts > 0) {
       f.score += pnts;
 
@@ -214,6 +606,9 @@ function Game() {
 
     // Stun others
     var didStun = attemptStun(f);
+
+    // Phaser attempt swipe (for bricks)
+    flyerBrickSwipe(f);
 
   };
 
@@ -227,9 +622,8 @@ function Game() {
     flyers.forEach(function(flyer) {
 
       if (flyer.stunned === true) {
-        // Stunned flyer remains still
-        flyer.vx = 0;
-        flyer.vy = 0;
+
+        // TODO: Freeze phaser physics object
 
         // Skip to next flyer
         return;
@@ -246,16 +640,12 @@ function Game() {
         flyer.flyDiv.hide();
         flyer.idleDiv.show();
 
-        // Friction
-        flyer.vx *= 0.99;
-
         flyer.deadCount++;
 
         if (flyer.deadCount > 8000) {
           // Assume player has lost connection. Remove from game.
           // Emit disconnect event to node
           if (onForceDisconnectCallback) {
-            console.log('disconnect userid:' + flyer.userid);
             onForceDisconnectCallback.call(undefined, flyer.userid);
           }
 
@@ -263,48 +653,8 @@ function Game() {
         }
       }
 
-      // Apply acceleration
-      flyer.vx += flyer.ax;
-      flyer.vy += flyer.ay;
-
-      // Apply Gravity
-      if (flyer.vy < 0) {
-        flyer.vy += 0.06;
-      } else {
-        flyer.vy += 0.006;
-      }
-
-      // Govern speed
-      flyer.vx = clamp(flyer.vx, -3, 4);
-      flyer.vy = clamp(flyer.vy, -4, 4);
-
-      // Move based on velocity
-      flyer.x += flyer.vx;
-      flyer.y += flyer.vy;
-
-      // Keep on stage
-      if (flyer.y >= stageBounds.floor + 30) {
-        flyer.y = stageBounds.ceil - 70;
-      } else if (flyer.y <= stageBounds.ceil - 70) {
-        flyer.y = stageBounds.floor + 30;
-      }
-
-      if (flyer.x >= stageBounds.right) {
-        flyer.x = stageBounds.left;
-      } else if (flyer.x <= stageBounds.left) {
-        flyer.x = stageBounds.right;
-      }
-
-      // Direction
-      if (flyer.ax < 0) {
-        flyer.dir = -1;
-      } else if (flyer.ax > 0) {
-        flyer.dir = 1;
-      }
-
-      // Update position
-      TweenLite.set($(flyer.div), { css: { left:flyer.x, top:flyer.y } });
-      TweenLite.set($(flyer.div).children('img'), { css: { scaleX:flyer.dir } });
+      // Update position based on Phaser physics body
+      TweenLite.set($(flyer.div), { css: { left:flyer.phaserBody.x, top:flyer.phaserBody.y } });
 
     });
 
@@ -381,18 +731,18 @@ function Game() {
         continue;
       }
 
-      of = flyers[i];
-      oX = parseInt($(of.div).css('left'), 10);
-      oY = parseInt($(of.div).css('top'), 10);
+      otherFlyer = flyers[i];
+      oX = parseInt(otherFlyer.phaserBody.x, 10);
+      oY = parseInt(otherFlyer.phaserBody.y, 10);
 
       if (dist(oX, oY, attackingFlyer.x, attackingFlyer.y) < stunRadius) {
 
         // Successful stun!
-        of.stunned = true;
-        TweenMax.to($(of.div), 0.2, { css: { opacity:0.5 }, ease:Power2.easeInOut, repeat:12, yoyo:true, onComplete: liftStun, onCompleteParams:[of] });
+        otherFlyer.stunned = true;
+        TweenMax.to($(otherFlyer.div), 0.2, { css: { opacity:0.5 }, ease:Power2.easeInOut, repeat:12, yoyo:true, onComplete: liftStun, onCompleteParams:[otherFlyer] });
 
         if (stunCallback) {
-          stunCallback.call(undefined, of.socketid);
+          stunCallback.call(undefined, otherFlyer.socketid);
         }
 
       }
@@ -420,6 +770,9 @@ function Game() {
     // Reset everyone's score
     resetScoreboard();
 
+    // Reset bricks and physics
+    phaserLevelReset();
+
   }
 
   function endRound() {
@@ -433,16 +786,20 @@ function Game() {
     updateScoreboard();
     $('#game-countdown').text(' ');
 
-    // Emit win event to top-scorer
-    if (winCallback) {
-      winCallback.call(undefined, flyers[0].socketid);
-    }
+    if (flyers.length > 1) {
 
-    // Emit lose event to every other player
-    if (loseCallback) {
-      for (var i = 1; i < flyers.length; i++) {
-        loseCallback.call(undefined, flyers[i].socketid);
+      // Emit win event to top-scorer
+      if (winCallback) {
+        winCallback.call(undefined, flyers[0].socketid);
       }
+
+      // Emit lose event to every other player
+      if (loseCallback) {
+        for (var i = 1; i < flyers.length; i++) {
+          loseCallback.call(undefined, flyers[i].socketid);
+        }
+      }
+
     }
 
   }
@@ -475,8 +832,8 @@ function Game() {
     $(stageDiv).append(pDiv);
 
     var p = polarity(flyer.ax);
-    var tX = flyer.x + (p * -12) + 15;
-    var tY = flyer.y + 55;
+    var tX = flyer.phaserBody.x + (p * -12) + 15;
+    var tY = flyer.phaserBody.y + 55;
 
     // Starting point
     TweenLite.set($(pDiv), { css: { opacity: 0.35, left:tX, top:tY} });
@@ -585,6 +942,7 @@ function Game() {
   function clearAsteroids() {
 
     for (a = asteroids.length - 1; a >= 0; a--) {
+
       var ast = asteroids[a];
 
       // Fade out
@@ -592,11 +950,17 @@ function Game() {
 
       // Remove from game loop
       asteroids.splice(a, 1);
+
     }
 
   }
 
-  // Utils
+  /**
+   *
+   * Utility Methods
+   *
+   */
+
   function lookupFlyer(id) {
     for (var i = 0; i < flyers.length; i++) {
       if (flyers[i].userid == id) return flyers[i];
@@ -621,6 +985,34 @@ function Game() {
 
   function roundToNearest(val, n) {
     return n * Math.round(val / n);
+  }
+
+  // Return true if the rectangle and circle are colliding
+  function rectCircleCollision(circle, rect) {
+    var distX = Math.abs(circle.x - rect.x - rect.w / 2);
+    var distY = Math.abs(circle.y - rect.y - rect.h / 2);
+
+    if (distX > (rect.w / 2 + circle.r)) {
+      return false;
+    }
+
+    if (distY > (rect.h / 2 + circle.r)) {
+      return false;
+    }
+
+    if (distX <= (rect.w / 2)) {
+      return true;
+    }
+
+    if (distY <= (rect.h / 2)) {
+      return true;
+    }
+
+    var dx = distX - rect.w / 2;
+    var dy = distY - rect.h / 2;
+
+    return (dx * dx + dy * dy <= (circle.r * circle.r));
+
   }
 
   function polarity(x) {

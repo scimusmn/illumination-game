@@ -37,8 +37,9 @@
 .points{
     position: absolute;
     z-index: 3;
-    font-size: 2em;
+    font-size: 3em;
     font-weight: bold;
+    background-color: black;
 }
 .asteroid,
 .asteroid img{
@@ -62,5 +63,5 @@
     -webkit-border-radius: 100%;
     border-radius: 100%;
     background: transparent;
-    border: 3px solid;
+    border: 6px solid;
 }

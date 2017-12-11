@@ -63,12 +63,12 @@ io.on('connection', function(socket) {
   var nickname;
   var usercolor;
 
-  console.log('User has connected. Connection:', socket.request.connection._peername);
+  // console.log('User has connected. Connection:', socket.request.connection._peername);
 
   // User registered
   socket.on('register', function(data) {
 
-    console.log('User has registered:', data.usertype, data.nickname, data.userid);
+    console.log('User registered:', data.usertype, data.nickname, data.userid);
 
     socketid = socket.id;
     usertype = data.usertype;
@@ -100,7 +100,7 @@ io.on('connection', function(socket) {
          * browser/device, so we disconnect
          * the previous connection.
          */
-        console.log('registered returning user ' + userid);
+        console.log('Returning user ' + userid);
         var prevConnected = clients[userid];
         console.log('prevConnected: ' + prevConnected);
         if (prevConnected && prevConnected !== socket.id) {
@@ -112,7 +112,7 @@ io.on('connection', function(socket) {
         }
 
       } else {
-        console.log('registered first time' + userid);
+        console.log('Registered first time' + userid);
 
         // New user
         userid = puid.generate();
@@ -191,8 +191,13 @@ io.on('connection', function(socket) {
   // Forward events to specific controllers
   socket.on('controller-event', function(data) {
 
-    console.log('Forwarding controller-event: ' + data.type + ', to socket: ' + data.socketid);
-    io.sockets.connected[data.socketid].emit('controller-event', data);
+    var targetSocket = io.sockets.connected[data.socketid];
+    if (targetSocket) {
+      targetSocket.emit('controller-event', data);
+    } else {
+      console.log('Blocked attempt to send controller-event to non existing socket:');
+      console.log(data);
+    }
 
   });
 
