@@ -3,3 +3,4 @@ public/video/*
 work/
 *.webm
 *.log
+pm2-env.json
