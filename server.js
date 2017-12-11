@@ -19,6 +19,12 @@ var sharedScreenConnected = false;
 // Search for '-port' flag
 // default to port 3000.
 var portNumber = 3000;
+
+if (process.env.PORT) {
+  portNumber = process.env.PORT;
+  console.log('SETTING PORT BASED ON ENV VAR');
+}
+
 if (process.argv.indexOf('--port') != -1) {
   portNumber = process.argv[process.argv.indexOf('--port') + 1];
 }
