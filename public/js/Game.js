@@ -26,7 +26,7 @@ function Game() {
   var flyerSpeedVertical = 30;
   var flyerSpeedHorizontal = 25;
 
-  var debugMode = true;
+  var debugMode = false;
   var debugFlyerData = {userid:'123456789xxx', usercolor:'#FD6E83', nickname:'Debug', socketid:'debug-abcdef'};
   var cursors;
   var brickPlatforms;
@@ -313,7 +313,7 @@ function Game() {
       testRect = {x:brick.x, y:brick.y, w:brick.width, h:brick.height};
 
       if (rectCircleCollision(swipeCircle, testRect)) {
-        damageBrick(brick, f.dir);
+        damageBrick(brick, f);
         didBustBrick = true;
       }
 
@@ -323,7 +323,7 @@ function Game() {
 
   }
 
-  function damageBrick(brick, dir) {
+  function damageBrick(brick, flyer) {
 
     if (brick.key == 'block') {
       brick.loadTexture('block-damaged');
@@ -340,7 +340,11 @@ function Game() {
       // Otherwise, bring back into
       // gameplay with 'revive'
 
-      particleBrickBurst(brick.x, brick.y, dir);
+      if (roundCountdown > 0) {
+        releasePoints(10, flyer.color, brick.x, brick.y - 15, flyer.dir);
+      }
+
+      particleBrickBurst(brick.x, brick.y, flyer.dir);
 
     }
   }
@@ -594,7 +598,7 @@ function Game() {
     TweenMax.to(f.fistDiv, 0.4, { css: { rotation: 330 * f.dir, opacity: 0 }, ease: Power3.easeOut });
 
     // Destroy asteroids
-    var pnts = smashAsteroids(f.phaserBody.x + 17, f.phaserBody.y + 25, f.dir, data.usercolor);
+    var pnts = smashAsteroids(f.phaserBody.x + 17, f.phaserBody.y + 25, f.dir, data.color);
     if (pnts > 0) {
       f.score += pnts;
 
@@ -608,6 +612,7 @@ function Game() {
     var didStun = attemptStun(f);
 
     // Phaser attempt swipe (for bricks)
+
     flyerBrickSwipe(f);
 
   };
