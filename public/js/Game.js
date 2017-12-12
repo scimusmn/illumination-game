@@ -642,6 +642,12 @@ function Game() {
 
         if (flyer.deadCount > 1500) {
 
+          // Never kill debug flyer.
+          if (flyer.userid == 'debug-user-id12345') {
+            flyer.deadCount = 0;
+            return;
+          }
+
           // Assume player has lost connection. Remove from game.
           // Emit disconnect event to node
           // 1500 frames at 60fps is about 25 seconds
