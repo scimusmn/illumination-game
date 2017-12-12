@@ -62,9 +62,9 @@
 
       game.setCallbacks(onForceDisconnect, onWin, onLose, onPoints, onStun);
 
-      function onForceDisconnect(userid) {
+      function onForceDisconnect(data) {
         //Emit idle player's socket id
-        socket.emit('force-disconnect', {'userid':userid} );
+        socket.emit('force-disconnect', {'userid':data.userid, 'socketid':data.socketid} );
       }
 
       function onWin(socketid) {

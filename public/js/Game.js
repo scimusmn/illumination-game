@@ -1,7 +1,7 @@
 function Game() {
 
-  var ROUND_DURATION = 70; // 75
-  var LOBBY_DURATION = 30; // 35
+  var ROUND_DURATION = 75; // 75
+  var LOBBY_DURATION = 20; // 35
 
   var _this = this;
   var currentFrameRequest = 0;
@@ -26,8 +26,8 @@ function Game() {
   var flyerSpeedVertical = 30;
   var flyerSpeedHorizontal = 25;
 
-  var debugMode = false;
-  var debugFlyerData = {userid:'123456789xxx', usercolor:'#FD6E83', nickname:'Debug', socketid:'debug-abcdef'};
+  var debugMode = true;
+  var debugFlyerData = {userid:'debug-user-id12345', usercolor:'#FD6E83', nickname:'Debug', socketid:'debug-socket-id-abc'};
   var cursors;
   var brickPlatforms;
   var allFlyersGroup;
@@ -63,7 +63,7 @@ function Game() {
     game.physics.startSystem(Phaser.Physics.NINJA);
 
     // Turn down gravity a bit (default was 0.2)
-    game.physics.ninja.gravity = 0.12;
+    game.physics.ninja.gravity = 0.07;
 
     // Keyboard for debug
     cursors = game.input.keyboard.createCursorKeys();
@@ -78,11 +78,9 @@ function Game() {
     brickEmitter.enableBody = true;
     brickEmitter.makeParticles('block-piece', 0, 100, true, true);
     brickEmitter.gravity = 620;
-    brickEmitter.bounce.setTo(0.3, 0.4);
-    brickEmitter.setScale(0.2, 0.4, 0.2, 0.4);
-
-    // brickEmitter.setAlpha(0.6, 0.0, 8888, Phaser.Easing.Quintic.In, false);
-    brickEmitter.setAlpha(0.15, 0.8);
+    brickEmitter.bounce.setTo(0.4, 0.6);
+    brickEmitter.setScale(0.25, 0.45, 0.25, 0.45);
+    brickEmitter.setAlpha(0.3, 0.85);
 
     // Game objects
     allFlyersGroup = game.add.group();
@@ -561,6 +559,7 @@ function Game() {
 
     }
 
+    // Remove from flyers array.
     for (i = flyers.length - 1; i >= 0; i--) {
       if (flyers[i].userid == data.userid) flyers.splice(i, 1);
     }
@@ -598,7 +597,7 @@ function Game() {
     TweenMax.to(f.fistDiv, 0.4, { css: { rotation: 330 * f.dir, opacity: 0 }, ease: Power3.easeOut });
 
     // Destroy asteroids
-    var pnts = smashAsteroids(f.phaserBody.x + 17, f.phaserBody.y + 25, f.dir, data.color);
+    var pnts = smashAsteroids(f.phaserBody.x + 17, f.phaserBody.y + 25, f.dir, f.color);
     if (pnts > 0) {
       f.score += pnts;
 
@@ -609,10 +608,9 @@ function Game() {
     }
 
     // Stun others
-    var didStun = attemptStun(f);
+    // var didStun = attemptStun(f);
 
     // Phaser attempt swipe (for bricks)
-
     flyerBrickSwipe(f);
 
   };
@@ -636,25 +634,25 @@ function Game() {
 
       if (flyer.gas === true) {
 
-        flyer.flyDiv.show();
-        flyer.idleDiv.hide();
-        deadCount = 0;
+        flyer.deadCount = 0;
 
       } else {
 
-        flyer.flyDiv.hide();
-        flyer.idleDiv.show();
-
         flyer.deadCount++;
 
-        if (flyer.deadCount > 8000) {
+        if (flyer.deadCount > 1500) {
+
           // Assume player has lost connection. Remove from game.
           // Emit disconnect event to node
+          // 1500 frames at 60fps is about 25 seconds
           if (onForceDisconnectCallback) {
-            onForceDisconnectCallback.call(undefined, flyer.userid);
+
+            onForceDisconnectCallback.call(undefined, {userid:flyer.userid, socketid:flyer.socketid});
+
           }
 
           return;
+
         }
       }
 

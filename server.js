@@ -171,8 +171,23 @@ io.on('connection', function(socket) {
                                                                     userid:data.userid,
                                                                 });
 
-    // Stop tracking this socket
-    delete clients[data.userid];
+    // Before disconnecting this user,
+    // display alert on their phone.
+    var userSocket = io.sockets.connected[data.socketid];
+    if (userSocket) {
+
+      userSocket.emit('alert-message', {message: 'Disconnected. Reload play.smm.org to join again.'});
+
+    } else {
+      console.log('Blocked attempt to send force-disconnect to non-existing socket:', data);
+    }
+
+    // Disconnect and cease
+    // tracking this socket
+    if (clients[data.userid]) {
+      clients[data.userid].disconnect();
+      delete clients[data.userid];
+    }
 
   });
 

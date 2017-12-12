@@ -114,8 +114,10 @@
       * to display full screen alerts
       */
       socket.on('alert-message', function(data){
-        $('body').empty();
-        $('body').append('<h1><br/>'+data.message+'</h1>');
+        console.log('alert-message recieved:', data);
+        $('#instruct').empty();
+        $('#instruct').append('<h2><br/>'+data.message+'</h2>');
+        alert(data.message);
       });
 
      /**
