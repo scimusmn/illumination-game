@@ -158,9 +158,16 @@
 
           playSound('points');
 
+          // Vibrate phone if capabable
+          navigator.vibrate(200);
+
         } else if (data.type === 'win') {
 
           playSound('winner');
+
+          // Winner vibrations if capable
+          // on this phone.
+          navigator.vibrate([500, 150, 100, 150, 100, 150, 100, 250, 500]);
 
         } else if (data.type === 'lose') {
           setTimeout(function () {
