@@ -93,7 +93,7 @@
       function register(data) {
 
         data.usertype = 'client_controller';
-        data.usercolor = randomColor();
+        data.usercolor = randomColor({luminosity: 'light'});
         socket.emit('register', data);
 
         setupTouchControls();
