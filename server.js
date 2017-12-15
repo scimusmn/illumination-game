@@ -74,6 +74,8 @@ io.on('connection', function(socket) {
   // User registered
   socket.on('register', function(data) {
 
+    console.log('registering w data', data);
+
     console.log('User registered:', data.usertype, data.nickname, data.userid);
 
     socketid = socket.id;
@@ -143,7 +145,7 @@ io.on('connection', function(socket) {
   // User disconnected
   socket.on('disconnect', function() {
 
-    console.log('User has disconnected:', usertype, nickname, userid);
+    console.log('[DISCONNECT] event recieved:', usertype, nickname, userid);
 
     if (usertype == CLIENT_CONTROLLER && sharedScreenConnected) {
 
@@ -165,29 +167,23 @@ io.on('connection', function(socket) {
   // Force specific client to disconnect
   socket.on('force-disconnect', function(data) {
 
-    if (!sharedScreenSID) return;
-    console.log('Removing client due to inactivity: ' + data.userid);
-    io.sockets.connected[sharedScreenSID].emit('remove-player', {   nickname:'idlePlayer',
-                                                                    userid:data.userid,
-                                                                });
+    console.log('[FORCE-DISCONNECT]', data);
+    data.disconnectMessage = 'Disconnected due to inactivity. Reload play.smm.org to join again.';
+    forceDisconnectUser(data);
 
-    // Before disconnecting this user,
-    // display alert on their phone.
-    var userSocket = io.sockets.connected[data.socketid];
-    if (userSocket) {
+  });
 
-      userSocket.emit('alert-message', {message: 'Disconnected. Reload play.smm.org to join again.'});
+  // Force specific client to disconnect
+  // Usually when user has left their mobile
+  // browser or opened a new tab.
+  socket.on('controller-lost-focus', function(data) {
 
-    } else {
-      console.log('Blocked attempt to send force-disconnect to non-existing socket:', data);
-    }
-
-    // Disconnect and cease
-    // tracking this socket
-    if (clients[data.userid]) {
-      clients[data.userid].disconnect();
-      delete clients[data.userid];
-    }
+    console.log('[CONTROLLER-LOST-FOCUS]', data);
+    var freshData = {};
+    freshData.socketid = socketid;
+    freshData.userid = userid;
+    freshData.disconnectMessage = 'Whoops, looks like you left the browser. Reload play.smm.org to join again.';
+    forceDisconnectUser(freshData);
 
   });
 
@@ -221,6 +217,39 @@ io.on('connection', function(socket) {
     }
 
   });
+
+  function forceDisconnectUser(data) {
+
+    console.log('forceDisconnectUser()', data);
+
+    // Do nothing if shared big screen isn't connected
+    if (!sharedScreenSID) return;
+
+    // Tell the game to remove the player
+    // using the userid to target the right game object.
+    io.sockets.connected[sharedScreenSID].emit('remove-player', {   nickname:'idlePlayer',
+                                                                    userid:data.userid,
+                                                                });
+
+    // Before disconnecting this user,
+    // display alert on their phone.
+    var disconnectSocket = io.sockets.connected[data.socketid];
+    if (disconnectSocket) {
+
+      disconnectSocket.emit('alert-message', {message: data.disconnectMessage});
+
+    } else {
+      console.log('Blocked attempt to send force-disconnect to non-existing socket:', data);
+    }
+
+    // Disconnect and cease
+    // tracking this socket
+    if (clients[data.userid]) {
+      clients[data.userid].disconnect();
+      delete clients[data.userid];
+    }
+
+  }
 
   function purifyName(nameStr) {
 

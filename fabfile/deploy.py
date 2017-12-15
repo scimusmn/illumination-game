@@ -51,3 +51,9 @@ def app (
     run('pm2 stop %s' % pm2_job)
     run('pm2 start %s/pm2-env.json' % node_server_deploy_path)
 
+@task
+def abcTest ():
+    """ABC test - eploy app to server and setup PM2 process."""
+    print('hello test');
+    local('date');
+

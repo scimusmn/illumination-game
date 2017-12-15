@@ -31,6 +31,8 @@ function Game() {
   var cursors;
   var brickPlatforms;
   var allFlyersGroup;
+  var winnerFlyer;
+  var winnerCrown;
 
   var brickEmitter;
 
@@ -49,6 +51,7 @@ function Game() {
     game.load.image('block-piece', 'img/sprites/block-piece.png');
 
     game.load.image('debug-block', 'img/sprites/square1.png');
+    game.load.image('crown', 'img/sprites/crown.png');
 
     game.load.atlasJSONHash('ghost', 'img/sprites/ghost.png', 'img/sprites/ghost.json');
 
@@ -71,6 +74,12 @@ function Game() {
     spaceButton.onDown.add(() => {
       _this.controlTap(debugFlyerData);
     }, this);
+
+    winnerCrown = game.add.sprite(0, 0, 'crown');
+    winnerCrown.name = 'crown';
+    winnerCrown.anchor.x = 0.5;
+    winnerCrown.anchor.y = 1.9;
+    winnerCrown.scale.setTo(0.14, 0.14);
 
     // Prepare particle effects
     brickEmitter = game.add.emitter(0, 0, 100);
@@ -281,6 +290,14 @@ function Game() {
 
     }
 
+  }
+
+  function crownNewWinner(flyer) {
+    // If not already wearing crown, add.
+   /* if (flyer.phaserBody.sprite.children.indexOf(winnerCrown) == -1) {
+      // sprite is a part of groupA
+      flyer.phaserBody.sprite.addChild(winnerCrown);
+    }*/
   }
 
   function flyerBrickSwipe(f) {
@@ -545,7 +562,7 @@ function Game() {
 
   this.removePlayer = function(data) {
 
-    console.log('Game.removePlayer: ' + data.nickname);
+    console.log('Game.removePlayer: ' + data);
 
     // Remove flyer from stage, phaser system, and game loop
     var flyer = lookupFlyer(data.userid);
@@ -640,7 +657,7 @@ function Game() {
 
         flyer.deadCount++;
 
-        if (flyer.deadCount > 1500) {
+        if (flyer.deadCount > 1800) {
 
           // Never kill debug flyer.
           if (flyer.userid == 'debug-user-id12345') {
@@ -650,7 +667,7 @@ function Game() {
 
           // Assume player has lost connection. Remove from game.
           // Emit disconnect event to node
-          // 1500 frames at 60fps is about 25 seconds
+          // 1800 frames at 60fps is about 30 seconds
           if (onForceDisconnectCallback) {
 
             onForceDisconnectCallback.call(undefined, {userid:flyer.userid, socketid:flyer.socketid});
@@ -800,6 +817,7 @@ function Game() {
       // Emit win event to top-scorer
       if (winCallback) {
         winCallback.call(undefined, flyers[0].socketid);
+        crownNewWinner(flyers[0]);
       }
 
       // Emit lose event to every other player

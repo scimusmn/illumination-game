@@ -1,5 +1,6 @@
-function VectorTouchController(socket) {
+function VectorTouchController(socket, color) {
 
+  var currentsColor = color || 'gray';
   var angle;
   var dist;
   var magnitude;
@@ -271,7 +272,10 @@ function VectorTouchController(socket) {
     // Normalized (0-1) based on shortest screen side.
     var pdist = map(c, 0, shortest, 0, 0.3) + 0.4;
 
-    ctx.strokeStyle = calcColor(0, 1, pdist);
+    // Uncomment for rainbow colors
+    // ctx.strokeStyle = calcColor(0, 1, pdist);
+
+    ctx.strokeStyle = currentsColor;
     ctx.beginPath();
     ctx.moveTo(p1x, p1y);
     ctx.lineTo(endX, endY);
