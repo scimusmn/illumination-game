@@ -74,9 +74,7 @@ io.on('connection', function(socket) {
   // User registered
   socket.on('register', function(data) {
 
-    console.log('registering w data', data);
-
-    console.log('User registered:', data.usertype, data.nickname, data.userid);
+    console.log('[REGISTER]', data.nickname, data.usertype, data.userid);
 
     socketid = socket.id;
     usertype = data.usertype;
@@ -85,8 +83,14 @@ io.on('connection', function(socket) {
 
     if (usertype == CLIENT_SHARED_SCREEN) {
 
-      sharedScreenSID =  socket.id;
-      sharedScreenConnected = true;
+      if (sharedScreenConnected == true) {
+        console.log('[[WARNING!]] Shared screen was already connected. Another browser is trying to take over the game. Blocking and disconnecting.');
+        socket.disconnect();
+      } else {
+        // Accept new shared screen
+        sharedScreenSID =  socket.id;
+        sharedScreenConnected = true;
+      }
 
     } else if (usertype == CLIENT_CONTROLLER && sharedScreenConnected) {
 
@@ -110,8 +114,8 @@ io.on('connection', function(socket) {
          */
         console.log('Returning user ' + userid);
         var prevConnected = clients[userid];
-        console.log('prevConnected: ' + prevConnected);
         if (prevConnected && prevConnected !== socket.id) {
+
           // TODO: Display "Disconnected" message on previous tab.
           console.log('Disconnecting redundant user socket: ' + clients[userid]);
           prevConnected.emit('alert-message', {message: 'Whoops you disconnected! Reload to play.'});
@@ -120,7 +124,8 @@ io.on('connection', function(socket) {
         }
 
       } else {
-        console.log('Registered first time' + userid);
+
+        console.log('Registered first timer:', userid);
 
         // New user
         userid = puid.generate();
@@ -140,6 +145,8 @@ io.on('connection', function(socket) {
 
     }
 
+    logStats();
+
   });
 
   // User disconnected
@@ -155,12 +162,24 @@ io.on('connection', function(socket) {
 
     } else if (usertype == CLIENT_SHARED_SCREEN) {
 
-      sharedScreenConnected = false;
+      if (sharedScreenSID == socketid) {
+        console.log('Disconnecting screen matches active screen. Expected.');
+
+        sharedScreenConnected = false;
+        sharedScreenSID = null;
+
+        console.log('[No SHARED SCREEN!] The shared screen is no longer connected.');
+
+      } else {
+        console.log('[[Warning]] Disconnecting screen doesn not match active screen. Unexpected.');
+      }
 
     }
 
     // Stop tracking this socket
     delete clients[userid];
+
+    logStats();
 
   });
 
@@ -248,6 +267,14 @@ io.on('connection', function(socket) {
       clients[data.userid].disconnect();
       delete clients[data.userid];
     }
+
+    logStats();
+
+  }
+
+  function logStats() {
+
+    console.log('[STATS] client count:', Object.keys(clients).length, '| shared screen status:', sharedScreenConnected, sharedScreenSID);
 
   }
 
