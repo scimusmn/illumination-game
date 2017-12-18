@@ -32,6 +32,9 @@ if (process.argv.indexOf('--port') != -1) {
 app.set('port', portNumber);
 app.use('/', express.static(path.join(__dirname, 'public')));
 
+// This allows ability sniff IP addresses (https://goo.gl/rHLCgE)
+app.enable('trust proxy');
+
 // Serve client files
 app.get('/', function(request, response) {
 
@@ -43,13 +46,20 @@ app.get('/', function(request, response) {
   // TODO: Serve warning to any user on unsupported OS, browser, or device.
 
   console.log('Serving controller.html to: ', device, ' running ', ua, ' on ', os);
+  console.log('Controller IP:', request.ip, request.ips);
   response.sendFile(__dirname + '/controller.html');
 
 });
 
 app.get('/screen', function(request, response) {
 
-  console.log('Serving screen.html');
+  console.log('[Serving /screen.html] Is sharedScreenConnected:', sharedScreenConnected);
+  console.log('Screen IP:', request.ip, request.ips);
+
+  if (sharedScreenConnected == true) {
+    console.log('Warning! Shared screen already connected. Unexpectedly serving another.');
+  }
+
   response.sendFile(__dirname + '/screen.html');
 
   var userAgent = request.headers['user-agent'];
@@ -84,8 +94,24 @@ io.on('connection', function(socket) {
     if (usertype == CLIENT_SHARED_SCREEN) {
 
       if (sharedScreenConnected == true) {
-        console.log('[[WARNING!]] Shared screen was already connected. Another browser is trying to take over the game. Blocking and disconnecting.');
-        socket.disconnect();
+
+        console.log('Warning! Shared screen was already connected. Another browser is taking over game. Is this intentional? Disconnecting current connected screen.');
+
+        var screenSocket = io.sockets.connected[sharedScreenSID];
+
+        if (screenSocket) {
+          console.log('Force disconnecting current shared screen.');
+          screenSocket.disconnect();
+        } else {
+          console.log('Previous screen socket did not exist despite never disconnecting.');
+        }
+
+        // We are currently allowing
+        // intruder screen to take over...
+        // Accept new shared screen
+        sharedScreenSID =  socket.id;
+        sharedScreenConnected = true;
+
       } else {
         // Accept new shared screen
         sharedScreenSID =  socket.id;
@@ -131,6 +157,7 @@ io.on('connection', function(socket) {
         userid = puid.generate();
         var userData = newUserData();
         socket.emit('store-local-data', {key: DEVICE_STORAGE_KEY, dataString: userData});
+
       }
 
       // Track clients' sockets so we can ensure only one socket per device.
@@ -171,7 +198,12 @@ io.on('connection', function(socket) {
         console.log('[No SHARED SCREEN!] The shared screen is no longer connected.');
 
       } else {
-        console.log('[[Warning]] Disconnecting screen doesn not match active screen. Unexpected.');
+
+        sharedScreenConnected = false;
+        sharedScreenSID = null;
+
+        console.log('Warning! Socket ID is mismatched on disconnect. Ensure only one screen is being served!');
+
       }
 
     }

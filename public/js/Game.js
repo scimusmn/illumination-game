@@ -89,7 +89,7 @@ function Game() {
     brickEmitter.gravity = 620;
     brickEmitter.bounce.setTo(0.4, 0.6);
     brickEmitter.setScale(0.25, 0.45, 0.25, 0.45);
-    brickEmitter.setAlpha(0.3, 0.85);
+    brickEmitter.setAlpha(0.45, 0.85);
 
     // Game objects
     allFlyersGroup = game.add.group();
