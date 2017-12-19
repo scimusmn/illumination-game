@@ -1,6 +1,6 @@
 function Game() {
 
-  var ROUND_DURATION = 75; // 75
+  var ROUND_DURATION = 80; // 75
   var LOBBY_DURATION = 20; // 35
 
   var _this = this;
@@ -167,16 +167,13 @@ function Game() {
 
   function createBrickPlatforms() {
 
-    brickPlatforms = game.add.group();
+    if (brickPlatforms) {
+      brickPlatforms.removeAll(true);
+    } else {
+      brickPlatforms = game.add.group();
+    }
 
     var brickRects = FishRandomBrickLevel(); // Available from ./BrickTileMap.js
-
-    // De-center all bricks (brick-mapper exports as centered)
-    for (var i = 0; i < brickRects.length; i++) {
-      var b = brickRects[i];
-      b.x -= (b.w / 2);
-      b.y -= (b.h / 2);
-    }
 
     var platform;
 
@@ -386,11 +383,14 @@ function Game() {
   function phaserLevelReset() {
 
     // Revive all killed bricks.
-    for (var i = brickPlatforms.children.length - 1; i >= 0; i--) {
+/*    for (var i = brickPlatforms.children.length - 1; i >= 0; i--) {
       var brick = brickPlatforms.children[i];
       brick.revive();
       brick.loadTexture('block');
-    }
+    }*/
+
+    // Generate brick tile pattern.
+    createBrickPlatforms();
 
   }
 
