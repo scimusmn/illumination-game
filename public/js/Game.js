@@ -1,7 +1,7 @@
 function Game() {
 
-  var ROUND_DURATION = 80; // 75
-  var LOBBY_DURATION = 20; // 35
+  var ROUND_DURATION = 15; // 75
+  var LOBBY_DURATION = 10; // 35
 
   var _this = this;
   var currentFrameRequest = 0;
@@ -107,7 +107,9 @@ function Game() {
 
     var userColor = parseInt(userdata.usercolor.replace(/^#/, ''), 16);
 
-    var flyerGroup = allFlyersGroup.create(775, 380, '');
+    var spawnX = Math.round(Math.random() * 600) + 600;
+    var spawnY = 300 - Math.round(Math.random() * 150);
+    var flyerGroup = allFlyersGroup.create(spawnX, spawnY, '');
     flyerGroup.width = 50;
     flyerGroup.height = 70;
 
@@ -134,11 +136,6 @@ function Game() {
 
     flyerRange.width = 150;
     flyerRange.height = 100;
-
-    // game.physics.ninja.enableAABB(flyerRange, false);
-    // flyerRange.body.immovable = true;
-    // flyerRange.body.gravityScale = 0;
-    // flyerRange.body.moves = false;
 
     // Combine into single flyer sprite
     flyerGroup.addChild(flyerRange);
@@ -291,10 +288,10 @@ function Game() {
 
   function crownNewWinner(flyer) {
     // If not already wearing crown, add.
-   /* if (flyer.phaserBody.sprite.children.indexOf(winnerCrown) == -1) {
-      // sprite is a part of groupA
-      flyer.phaserBody.sprite.addChild(winnerCrown);
-    }*/
+    /* if (flyer.phaserBody.sprite.children.indexOf(winnerCrown) == -1) {
+       // sprite is a part of groupA
+       flyer.phaserBody.sprite.addChild(winnerCrown);
+     }*/
   }
 
   function flyerBrickSwipe(f) {
@@ -376,18 +373,18 @@ function Game() {
 
     // brickEmitter.start(true, 5500, null, 10);
 
-    brickEmitter.explode(6666, Math.round(Math.random() * 2 + 3));
+    brickEmitter.explode(5555, Math.round(Math.random() * 2 + 3));
 
   }
 
   function phaserLevelReset() {
 
     // Revive all killed bricks.
-/*    for (var i = brickPlatforms.children.length - 1; i >= 0; i--) {
-      var brick = brickPlatforms.children[i];
-      brick.revive();
-      brick.loadTexture('block');
-    }*/
+    /*    for (var i = brickPlatforms.children.length - 1; i >= 0; i--) {
+          var brick = brickPlatforms.children[i];
+          brick.revive();
+          brick.loadTexture('block');
+        }*/
 
     // Generate brick tile pattern.
     createBrickPlatforms();
@@ -926,8 +923,12 @@ function Game() {
     diam *= scale;
 
     // Release point
-    var startX = Math.random() * (stageBounds.right - 60) + 30;
+    // var startX = Math.random() * (stageBounds.right - 60) + 30;
+    // var startY = Math.random() * (stageBounds.floor - 60) + 30;
+
+    var startX = Math.random() * (game.width - 60) + 30;
     var startY = Math.random() * (stageBounds.floor - 60) + 30;
+
     TweenLite.set($(aDiv), { css: {scale:scale, left:startX, top:startY } });
 
     var health = roundToNearest(diam / 2, 5);
