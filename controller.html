@@ -112,6 +112,17 @@
       }
 
      /**
+      * Listen for useful socket.io events
+      */
+      socket.on('disconnect', (reason) => {
+        console.log('Disconnect. reason:', reason);
+      });
+
+      socket.on('disconnecting', (reason) => {
+        console.log('Disconnecting... reason', reason);
+      });
+
+     /**
       * Generalized message reciever
       * to display full screen alerts
       */

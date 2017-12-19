@@ -20,7 +20,7 @@ function Game() {
   /* ================= */
   /* PHASER GAME LAYER */
   /* ================= */
-  var game = new Phaser.Game(1920, 1080, Phaser.AUTO, 'stage', { preload: phaserPreload, create: phaserCreate, update: phaserUpdate, render: phaserRender });
+  var game = new Phaser.Game(1666, 1080, Phaser.AUTO, 'stage', { preload: phaserPreload, create: phaserCreate, update: phaserUpdate, render: phaserRender });
 
   /* Phaser variables */
   var flyerSpeedVertical = 30;
@@ -169,7 +169,7 @@ function Game() {
 
     brickPlatforms = game.add.group();
 
-    var brickRects = BrickTileMap; // Variable from ./BrickTileMap.js
+    var brickRects = FishRandomBrickLevel(); // Available from ./BrickTileMap.js
 
     // De-center all bricks (brick-mapper exports as centered)
     for (var i = 0; i < brickRects.length; i++) {

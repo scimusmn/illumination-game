@@ -215,6 +215,10 @@ io.on('connection', function(socket) {
 
   });
 
+  socket.on('disconnecting', (reason) => {
+    console.log('[DISCONNECTING...]', reason, userid, nickname);
+  });
+
   // Force specific client to disconnect
   socket.on('force-disconnect', function(data) {
 
