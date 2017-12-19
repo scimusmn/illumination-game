@@ -1,7 +1,7 @@
 function Game() {
 
-  var ROUND_DURATION = 15; // 75
-  var LOBBY_DURATION = 10; // 35
+  var ROUND_DURATION = 86; // 75
+  var LOBBY_DURATION = 26; // 35
 
   var _this = this;
   var currentFrameRequest = 0;
@@ -26,7 +26,7 @@ function Game() {
   var flyerSpeedVertical = 30;
   var flyerSpeedHorizontal = 25;
 
-  var debugMode = false;
+  var debugMode = true;
   var debugFlyerData = {userid:'debug-user-id12345', usercolor:'#FD6E83', nickname:'Debug', socketid:'debug-socket-id-abc'};
   var cursors;
   var brickPlatforms;
@@ -56,7 +56,7 @@ function Game() {
     game.load.atlasJSONHash('ghost', 'img/sprites/ghost.png', 'img/sprites/ghost.json');
 
     // Fonts
-    game.load.bitmapFont('carrier_command', 'fonts/bitmapFonts/carrier_command.png', 'fonts/bitmapFonts/carrier_command.xml');
+    // game.load.bitmapFont('carrier_command', 'fonts/bitmapFonts/carrier_command.png', 'fonts/bitmapFonts/carrier_command.xml');
 
   }
 
@@ -110,8 +110,8 @@ function Game() {
     var spawnX = Math.round(Math.random() * 600) + 600;
     var spawnY = 300 - Math.round(Math.random() * 150);
     var flyerGroup = allFlyersGroup.create(spawnX, spawnY, '');
-    flyerGroup.width = 50;
-    flyerGroup.height = 70;
+    flyerGroup.width = 30;
+    flyerGroup.height = 50;
 
     var flyerSprite = game.add.sprite(0, 0, 'ghost');
 
@@ -126,7 +126,8 @@ function Game() {
     flyerSprite.tint = userColor;
     flyerSprite.anchor.x = 0.5;
     flyerSprite.anchor.y = 0.5;
-    flyerSprite.setScaleMinMax(-1.0, 1.0, 1.0, 1.0);
+    flyerSprite.setScaleMinMax(-0.75, 0.75, 0.75, 0.75);
+    // flyerSprite.scale.setTo(0.5, 0.5);
 
     // Swipe collision object.
     var flyerRange = game.add.sprite(0, 0, '');
@@ -466,6 +467,7 @@ function Game() {
         if (roundCountdown === 0) {
 
           startRound();
+          $('#game-countdown').removeClass('show');
 
         }
 
@@ -476,6 +478,7 @@ function Game() {
         // Only display countdown below 15 seconds
         if (roundCountdown <= 15) {
           $('#game-countdown').text(Math.abs(roundCountdown));
+          $('#game-countdown').addClass('show');
         }
 
         if (roundCountdown === 0) {
@@ -926,7 +929,7 @@ function Game() {
     // var startX = Math.random() * (stageBounds.right - 60) + 30;
     // var startY = Math.random() * (stageBounds.floor - 60) + 30;
 
-    var startX = Math.random() * (game.width - 60) + 30;
+    var startX = Math.random() * (game.width - 160) + 30;
     var startY = Math.random() * (stageBounds.floor - 60) + 30;
 
     TweenLite.set($(aDiv), { css: {scale:scale, left:startX, top:startY } });

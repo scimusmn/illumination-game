@@ -116,10 +116,12 @@
       */
       socket.on('disconnect', (reason) => {
         console.log('Disconnect. reason:', reason);
+        displayMessageToUser('Disconnected. Reload play.smm.org to join again. ('+reason+')');
       });
 
       socket.on('disconnecting', (reason) => {
         console.log('Disconnecting... reason', reason);
+        displayMessageToUser('Disconnecting... ('+reason+')', false);
       });
 
      /**
@@ -128,10 +130,18 @@
       */
       socket.on('alert-message', function(data){
         console.log('alert-message recieved:', data);
-        $('#instruct').empty();
-        $('#instruct').append('<h2>&#x26a0;<br/>'+data.message+'</h2>');
-        alert(data.message);
+        displayMessageToUser(data.message);
       });
+
+      function displayMessageToUser(msg, showAlert) {
+
+        var _showAlert = showAlert || true;
+
+        $('#instruct').empty();
+        $('#instruct').append('<h2>&#x26a0;<br/>'+msg+'</h2>');
+        alert(msg);
+
+      }
 
      /**
       * Listen for instruction from
