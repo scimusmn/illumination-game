@@ -116,7 +116,22 @@
       */
       socket.on('disconnect', (reason) => {
         console.log('Disconnect. reason:', reason);
+
         displayMessageToUser('Disconnected. Reload play.smm.org to join again. ('+reason+')');
+
+        // TODO - Can I attempt to reconnect?
+
+        if(reason === 'ping timeout') {
+          //you should renew token or do another important things before reconnecting
+          console.log('That darn ping timeout. Attemptoin')
+          setTimeout( () => {
+            console.log('Attempting reconnect');
+            displayMessageToUser('Attempting reconnect after ping timeout. ('+reason+')', false);
+            socket.connect();
+          }, 9000);
+        }
+
+
       });
 
       socket.on('disconnecting', (reason) => {
@@ -193,6 +208,7 @@
           navigator.vibrate([500, 150, 250, 150, 250, 150, 250, 250, 500]);
 
         } else if (data.type === 'lose') {
+
           setTimeout(function () {
             playSound('loser'+Math.ceil(Math.random()*3));
           }, 5000);

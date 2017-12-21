@@ -8,12 +8,14 @@ body {
     color:#efefef;
     font: 13px Helvetica, Arial;
     background: #000;
+    overflow: hidden;
 }
 
 #stage {
     position: absolute;
     top: 0;
     left: 0;
+    overflow: hidden;
 }
 
 #messages {

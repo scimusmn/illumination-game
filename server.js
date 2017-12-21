@@ -2,7 +2,7 @@
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
-var io = require('socket.io')(http, {path: '/socket.io'});
+var io = require('socket.io')(http, {path: '/socket.io', pingInterval: 900000, pingTimeout: 2400000});
 var path = require('path');
 var uaParser = require('ua-parser');
 var Puid = require('puid');
@@ -33,7 +33,7 @@ app.set('port', portNumber);
 app.use('/', express.static(path.join(__dirname, 'public')));
 
 // This allows ability sniff IP addresses (https://goo.gl/rHLCgE)
-app.enable('trust proxy');
+// app.enable('trust proxy');
 
 // Serve client files
 app.get('/', function(request, response) {
@@ -177,15 +177,20 @@ io.on('connection', function(socket) {
   });
 
   // User disconnected
-  socket.on('disconnect', function() {
+  socket.on('disconnect', function(reason) {
 
-    console.log('[DISCONNECT] event recieved:', usertype, nickname, userid);
+    console.log('[DISCONNECT] event recieved:', reason, usertype, nickname, userid);
 
     if (usertype == CLIENT_CONTROLLER && sharedScreenConnected) {
 
-      io.sockets.connected[sharedScreenSID].emit('remove-player', {   nickname:nickname,
+      if (reason == 'ping timeout') {
+        console.log('What just a second. That dang ping timeout. Should attempt reconnect?');
+
+      } else {
+        io.sockets.connected[sharedScreenSID].emit('remove-player', {   nickname:nickname,
                                                                       userid:userid,
                                                                   });
+      }
 
     } else if (usertype == CLIENT_SHARED_SCREEN) {
 
@@ -346,3 +351,7 @@ http.listen(portNumber, function() {
 
 });
 
+// Set socket io settings
+console.log('+++++ SOCKET.IO ++++');
+console.log('pingTimeout:', io.engine.pingTimeout);
+console.log('pingInterval:', io.engine.pingInterval);

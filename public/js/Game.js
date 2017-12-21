@@ -1,7 +1,7 @@
 function Game() {
 
-  var ROUND_DURATION = 86; // 75
-  var LOBBY_DURATION = 26; // 35
+  var ROUND_DURATION = 76; // 75
+  var LOBBY_DURATION = 24; // 35
 
   var _this = this;
   var currentFrameRequest = 0;
@@ -26,7 +26,7 @@ function Game() {
   var flyerSpeedVertical = 30;
   var flyerSpeedHorizontal = 25;
 
-  var debugMode = true;
+  var debugMode = false;
   var debugFlyerData = {userid:'debug-user-id12345', usercolor:'#FD6E83', nickname:'Debug', socketid:'debug-socket-id-abc'};
   var cursors;
   var brickPlatforms;
@@ -54,6 +54,7 @@ function Game() {
     game.load.image('crown', 'img/sprites/crown.png');
 
     game.load.atlasJSONHash('ghost', 'img/sprites/ghost.png', 'img/sprites/ghost.json');
+    game.load.atlasJSONHash('led', 'img/sprites/led.png', 'img/sprites/led.json');
 
     // Fonts
     // game.load.bitmapFont('carrier_command', 'fonts/bitmapFonts/carrier_command.png', 'fonts/bitmapFonts/carrier_command.xml');
@@ -110,23 +111,30 @@ function Game() {
     var spawnX = Math.round(Math.random() * 600) + 600;
     var spawnY = 300 - Math.round(Math.random() * 150);
     var flyerGroup = allFlyersGroup.create(spawnX, spawnY, '');
-    flyerGroup.width = 30;
-    flyerGroup.height = 50;
+    flyerGroup.width = 40;
+    flyerGroup.height = 58;
 
-    var flyerSprite = game.add.sprite(0, 0, 'ghost');
+    var flyerSprite = game.add.sprite(0, 0, 'led');
 
     // Animation
-    var frames = Phaser.Animation.generateFrameNames('ghost_standing', 1, 7, '.png', 4);
+    // var frames = Phaser.Animation.generateFrameNames('ghost_standing', 1, 7, '.png', 4);
+    // flyerSprite.animations.add('idle', frames, 10, true, false);
+
+    // frames = Phaser.Animation.generateFrameNames('ghost_walk', 1, 4, '.png', 4);
+    // flyerSprite.animations.add('fly', frames, 10, true, false);
+
+    var frames = Phaser.Animation.generateFrameNames('idle_', 0, 4, '.png', 4);
     flyerSprite.animations.add('idle', frames, 10, true, false);
 
-    frames = Phaser.Animation.generateFrameNames('ghost_walk', 1, 4, '.png', 4);
+    frames = Phaser.Animation.generateFrameNames('side_', 1, 6, '.png', 4);
     flyerSprite.animations.add('fly', frames, 10, true, false);
 
-    flyerSprite.animations.play('idle');
+    flyerSprite.animations.play('fly');
     flyerSprite.tint = userColor;
     flyerSprite.anchor.x = 0.5;
     flyerSprite.anchor.y = 0.5;
-    flyerSprite.setScaleMinMax(-0.75, 0.75, 0.75, 0.75);
+    flyerSprite.setScaleMinMax(-0.8, 0.8, 0.8, 0.8);
+
     // flyerSprite.scale.setTo(0.5, 0.5);
 
     // Swipe collision object.
@@ -163,10 +171,16 @@ function Game() {
 
   }
 
+  function clearAllBricks() {
+
+    brickPlatforms.removeAll(true);
+
+  }
+
   function createBrickPlatforms() {
 
     if (brickPlatforms) {
-      brickPlatforms.removeAll(true);
+      clearAllBricks();
     } else {
       brickPlatforms = game.add.group();
     }
@@ -335,13 +349,17 @@ function Game() {
 
   function damageBrick(brick, flyer) {
 
+    console.log('damageBrick', brick.key);
     if (brick.key == 'block') {
       brick.loadTexture('block-damaged');
 
+      console.log('1');
     } else if (brick.key == 'block-damaged') {
+      console.log('2');
       brick.loadTexture('block-damaged-2');
 
     } else {
+      console.log('3');
       brick.kill();
 
       // TODO - If we don't plan to
@@ -809,6 +827,7 @@ function Game() {
     $('#join-msg').hide();
     roundCountdown = -LOBBY_DURATION;
     clearAsteroids();
+    clearAllBricks();
     updateScoreboard();
     $('#game-countdown').text(' ');
 
