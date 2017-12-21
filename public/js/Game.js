@@ -129,13 +129,30 @@ function Game() {
     frames = Phaser.Animation.generateFrameNames('side_', 1, 6, '.png', 4);
     flyerSprite.animations.add('fly', frames, 10, true, false);
 
-    flyerSprite.animations.play('fly');
-    flyerSprite.tint = userColor;
-    flyerSprite.anchor.x = 0.5;
-    flyerSprite.anchor.y = 0.5;
-    flyerSprite.setScaleMinMax(-0.8, 0.8, 0.8, 0.8);
+
 
     // flyerSprite.scale.setTo(0.5, 0.5);
+
+    var flyerInner = game.add.sprite(0, 0, 'led');
+    // Inner/white
+    frames = Phaser.Animation.generateFrameNames('idle-inner', 1, 5, '.png', 0);
+    flyerInner.animations.add('idle', frames, 10, true, false);
+
+    frames = Phaser.Animation.generateFrameNames('side-inner', 1, 6, '.png', 0);
+    flyerInner.animations.add('fly', frames, 10, true, false);
+
+    flyerSprite.animations.play('fly');
+    flyerSprite.tint = userColor;
+    flyerSprite.setScaleMinMax(-0.8, 0.8, 0.8, 0.8);
+
+    flyerSprite.anchor.x = 0.5;
+    flyerSprite.anchor.y = 0.5;
+
+    flyerInner.anchor.x = 0.5;
+    flyerInner.anchor.y = 0.48;
+
+    flyerInner.animations.play('fly');
+    flyerInner.setScaleMinMax(-0.8, 0.8, 0.8, 0.8);
 
     // Swipe collision object.
     var flyerRange = game.add.sprite(0, 0, '');
@@ -149,6 +166,7 @@ function Game() {
     // Combine into single flyer sprite
     flyerGroup.addChild(flyerRange);
     flyerGroup.addChild(flyerSprite);
+    flyerGroup.addChild(flyerInner);
 
     game.physics.ninja.enableAABB(flyerGroup, false);
 
@@ -167,7 +185,7 @@ function Game() {
     // Default is 0.3
     flyerGroup.body.bounce = 0.36;
 
-    return [flyerGroup.body, flyerSprite];
+    return [flyerGroup.body, flyerSprite , flyerInner];
 
   }
 
@@ -229,24 +247,30 @@ function Game() {
 
     const fBody = flyer.phaserBody;
     const fSprite = flyer.phaserSprite;
+    const fInner = flyer.phaserInner;
 
     if (flyer.ax < 0) {
 
       fBody.moveLeft(flyerSpeedHorizontal * Math.abs(flyer.ax));
       fSprite.animations.play('fly');
+      fInner.animations.play('fly');
       flyer.dir = -1.0;
       fSprite.scale.setTo(flyer.dir, 1.0);
+      fInner.scale.setTo(-flyer.dir, 1.0);
 
     } else if (flyer.ax > 0) {
 
       fBody.moveRight(flyerSpeedHorizontal * Math.abs(flyer.ax));
       fSprite.animations.play('fly');
+      fInner.animations.play('fly');
       flyer.dir = 1.0;
       fSprite.scale.setTo(flyer.dir, 1.0);
+      fInner.scale.setTo(-flyer.dir, 1.0);
 
     } else {
 
       fSprite.animations.play('idle');
+      fInner.animations.play('idle');
 
     }
 
@@ -549,6 +573,7 @@ function Game() {
     var phaserObj = addPhaserBody(data);
     var pBody = phaserObj[0];
     var pSprite = phaserObj[1];
+    var pInner = phaserObj[2];
 
     // Add to game loop
     var newFlyer = {    userid:data.userid,
@@ -559,6 +584,7 @@ function Game() {
                         fistDiv:$(flyerDiv).children('#fist'),
                         phaserBody: pBody,
                         phaserSprite: pSprite,
+                        phaserInner: pInner,
                         nickname:data.nickname,
                         color:data.usercolor,
                         deadCount: 0,
